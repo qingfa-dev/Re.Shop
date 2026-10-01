@@ -7,12 +7,12 @@ public class MetadataInterfaceTest
 {
     private sealed class MetadataHolder : IMetadata
     {
-        public Dictionary<string, object?>? Metadata { get; } = [];
+        public Dictionary<string, object?>? Metadata { get; set; } = [];
     }
 
     private sealed class NullMetadataHolder : IMetadata
     {
-        public Dictionary<string, object?>? Metadata => null;
+        public Dictionary<string, object?>? Metadata { get; set; }
     }
 
     [Fact]

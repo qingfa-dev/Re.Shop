@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace SharedKernel.Meta;
 
 public static class MetadataExtension
@@ -15,13 +17,56 @@ public static class MetadataExtension
     public static T? SetMetadata<T>(this T? source, string? key, object? value)
           where T : IMetadata
     {
-        if (source is null || source.Metadata is null || string.IsNullOrWhiteSpace(key) || value is null)
+        if (source is null)
         {
             return default;
         }
 
+        MetadataGuard.ValidateKey(key);
+        MetadataGuard.ValidateValue(value);
+
+        source.Metadata ??= new Dictionary<string, object?>();
         source.Metadata[key] = value;
         return source;
+    }
+
+    // Fluent:
+    [return: NotNullIfNotNull(nameof(source))]
+    public static T? WithMetadata<T>(this T? source, string? key, object? value)
+        where T : IMetadata
+    {
+        return source.SetMetadata(key, value);
+    }
+
+    [return: NotNullIfNotNull(nameof(source))]
+    public static T? WithAdditionalMetadata<T>(
+        this T? source,
+        Dictionary<string, object?>? additionalMetadata = null)
+        where T : IMetadata
+    {
+        if (source is null || additionalMetadata is null || additionalMetadata.Count == 0)
+        {
+            return source;
+        }
+
+        foreach (var entry in additionalMetadata)
+        {
+            source = source.SetMetadata(entry.Key, entry.Value);
+        }
+
+        return source;
+    }
+
+    public static T? WithType<T>(this T? source, string? type)
+        where T : IMetadata
+    {
+        return source.WithMetadata(MetadataConstant.MetadataKey.Type, type);
+    }
+
+    public static T? WithTarget<T>(this T? source, string? target)
+        where T : IMetadata
+    {
+        return source.WithMetadata(MetadataConstant.MetadataKey.Target, target);
     }
 
     // Merge:
