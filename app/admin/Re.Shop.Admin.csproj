@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/Re.Shop.Contracts/Re.Shop.Contracts.csproj" />
+    <ProjectReference Include="../../src/Re.Shop.SharedKernel/Re.Shop.SharedKernel.csproj" />
+    <ProjectReference Include="../../aspire/Re.ServiceDefaults/Re.ServiceDefaults.csproj" />
+  </ItemGroup>
+</Project>

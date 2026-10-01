@@ -1,0 +1,15 @@
+<Project>
+
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props','$(MSBuildThisFileDirectory)../'))" />
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <IsPublishable>false</IsPublishable>
+    <!--
+      src/ is library code: GenerateDocumentationFile stays true from the
+      root, so every public and protected member here needs an XML summary.
+      src/ must never declare OutputType=Exe.
+    -->
+  </PropertyGroup>
+
+</Project>

@@ -1,0 +1,25 @@
+<Solution>
+  <Folder Name="/.config/">
+    <File Path="nuget.config" />
+  </Folder>
+  <Folder Name="/app/">
+    <Project Path="app/admin/Re.Shop.Admin.csproj" />
+    <Project Path="app/api/Re.Shop.Api.csproj" />
+  </Folder>
+  <Folder Name="/aspire/">
+    <Project Path="aspire/Re.AppHost/Re.AppHost.csproj" />
+    <Project Path="aspire/Re.ServiceDefaults/Re.ServiceDefaults.csproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/Re.Shop.Application/Re.Shop.Application.csproj" />
+    <Project Path="src/Re.Shop.Contracts/Re.Shop.Contracts.csproj" />
+    <Project Path="src/Re.Shop.Domain/Re.Shop.Domain.csproj" />
+    <Project Path="src/Re.Shop.Infrastructure/Re.Shop.Infrastructure.csproj" />
+    <Project Path="src/Re.Shop.SharedKernel/Re.Shop.SharedKernel.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Re.Shop.Api.Tests/Re.Shop.Api.Tests.csproj" />
+    <Project Path="tests/Re.Shop.Architecture.Tests/Re.Shop.Architecture.Tests.csproj" />
+    <Project Path="tests/Re.Shop.Domain.Tests/Re.Shop.Domain.Tests.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,17 @@
+<Project>
+
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props','$(MSBuildThisFileDirectory)../'))" />
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <IsPublishable>false</IsPublishable>
+    <!--
+      Re.ServiceDefaults/Extensions.cs is template-authored with no XML
+      comments. The root turns TreatWarningsAsErrors on, so documentation
+      would fail the build on CS1591 before anyone could write it.
+      Analyzers and every validation target stay fully active here.
+    -->
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+
+</Project>
