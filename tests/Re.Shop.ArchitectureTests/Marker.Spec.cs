@@ -24,49 +24,49 @@ namespace ArchitectureTests;
 public sealed class MarkerSpec
 {
     [Fact]
-    public void SharedKernel_marker_lives_in_the_SharedKernel_assembly()
+    public void SharedKernelMarker_LivesInAssembly_IsSharedKernel()
     {
         typeof(SharedKernelMarker).Assembly.GetName().Name
             .ShouldBe("Re.Shop.SharedKernel");
     }
 
     [Fact]
-    public void Domain_marker_lives_in_the_Domain_assembly()
+    public void DomainMarker_LivesInAssembly_IsDomain()
     {
         typeof(DomainMarker).Assembly.GetName().Name
             .ShouldBe("Re.Shop.Domain");
     }
 
     [Fact]
-    public void Contracts_marker_lives_in_the_Contracts_assembly()
+    public void ContractsMarker_LivesInAssembly_IsContracts()
     {
         typeof(ContractsMarker).Assembly.GetName().Name
             .ShouldBe("Re.Shop.Contracts");
     }
 
     [Fact]
-    public void Application_marker_lives_in_the_Application_assembly()
+    public void ApplicationMarker_LivesInAssembly_IsApplication()
     {
         typeof(ApplicationMarker).Assembly.GetName().Name
             .ShouldBe("Re.Shop.Application");
     }
 
     [Fact]
-    public void Infrastructure_marker_lives_in_the_Infrastructure_assembly()
+    public void InfrastructureMarker_LivesInAssembly_IsInfrastructure()
     {
         typeof(InfrastructureMarker).Assembly.GetName().Name
             .ShouldBe("Re.Shop.Infrastructure");
     }
 
     [Fact]
-    public void Api_marker_lives_in_the_Api_assembly()
+    public void ApiMarker_LivesInAssembly_IsApi()
     {
         typeof(ApiMarker).Assembly.GetName().Name
             .ShouldBe("Re.Shop.Api");
     }
 
     [Fact]
-    public void Admin_marker_lives_in_the_Admin_assembly()
+    public void AdminMarker_LivesInAssembly_IsAdmin()
     {
         typeof(AdminMarker).Assembly.GetName().Name
             .ShouldBe("Re.Shop.Admin");

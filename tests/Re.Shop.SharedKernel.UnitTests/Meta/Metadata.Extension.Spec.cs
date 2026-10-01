@@ -23,7 +23,7 @@ public class MetadataExtensionsTest
     #region GetMetadata
 
     [Fact]
-    public void GetMetadata_ExistingKey_ShouldReturnValue()
+    public void GetMetadata_KeyExists_ReturnsValue()
     {
         var source = new SourceHolder();
 
@@ -36,7 +36,7 @@ public class MetadataExtensionsTest
     }
 
     [Fact]
-    public void GetMetadata_NonExistingKey_ShouldReturnNull()
+    public void GetMetadata_KeyDoesNotExist_ReturnsNull()
     {
         var source = new SourceHolder();
 
@@ -46,7 +46,7 @@ public class MetadataExtensionsTest
     }
 
     [Fact]
-    public void GetMetadata_NullSource_ShouldReturnNull()
+    public void GetMetadata_SourceIsNull_ReturnsNull()
     {
         SourceHolder? source = null;
 
@@ -56,7 +56,7 @@ public class MetadataExtensionsTest
     }
 
     [Fact]
-    public void GetMetadata_NullKey_ShouldReturnNull()
+    public void GetMetadata_KeyIsNull_ReturnsNull()
     {
         var source = new SourceHolder();
 
@@ -66,7 +66,7 @@ public class MetadataExtensionsTest
     }
 
     [Fact]
-    public void GetMetadata_NullMetadataStorage_ShouldReturnNull()
+    public void GetMetadata_StorageIsNull_ReturnsNull()
     {
         var source = new NullMetadataHolder();
 
@@ -76,7 +76,7 @@ public class MetadataExtensionsTest
     }
 
     [Fact]
-    public void GetMetadata_DifferentCasing_ShouldReturnNull()
+    public void GetMetadata_KeyCasingDiffers_ReturnsNull()
     {
         var source = new SourceHolder();
 
@@ -93,7 +93,7 @@ public class MetadataExtensionsTest
     #region SetMetadata
 
     [Fact]
-    public void SetMetadata_ShouldSetValueAndReturnSource()
+    public void SetMetadata_ValidParameters_SetsValueAndReturnsSource()
     {
         var source = new SourceHolder();
 
@@ -105,7 +105,7 @@ public class MetadataExtensionsTest
     }
 
     [Fact]
-    public void SetMetadata_NullSource_ShouldReturnNull()
+    public void SetMetadata_SourceIsNull_ReturnsNull()
     {
         SourceHolder? source = null;
 
@@ -115,7 +115,7 @@ public class MetadataExtensionsTest
     }
 
     [Fact]
-    public void SetMetadata_NullKey_ShouldReturnNull()
+    public void SetMetadata_KeyIsNull_ReturnsNull()
     {
         var source = new SourceHolder();
 
@@ -125,7 +125,7 @@ public class MetadataExtensionsTest
     }
 
     [Fact]
-    public void SetMetadata_NullValue_ShouldReturnNull()
+    public void SetMetadata_ValueIsNull_ReturnsNull()
     {
         var source = new SourceHolder();
 
@@ -135,7 +135,7 @@ public class MetadataExtensionsTest
     }
 
     [Fact]
-    public void SetMetadata_NullMetadataStorage_ShouldReturnNull()
+    public void SetMetadata_StorageIsNull_ReturnsNull()
     {
         var source = new NullMetadataHolder();
 
@@ -149,7 +149,7 @@ public class MetadataExtensionsTest
     #region MergeMetadata
 
     [Fact]
-    public void MergeMetadata_ShouldCopyAllEntries()
+    public void MergeMetadata_SourceHasEntries_CopiesAllEntries()
     {
         var source = new SourceHolder();
 
@@ -171,7 +171,7 @@ public class MetadataExtensionsTest
     }
 
     [Fact]
-    public void MergeMetadata_NullDest_ShouldReturnNull()
+    public void MergeMetadata_DestinationIsNull_ReturnsNull()
     {
         DestHolder? dest = null;
         var source = new SourceHolder();
@@ -185,7 +185,7 @@ public class MetadataExtensionsTest
     }
 
     [Fact]
-    public void MergeMetadata_NullSource_ShouldReturnNull()
+    public void MergeMetadata_SourceIsNull_ReturnsNull()
     {
         var dest = new DestHolder();
         SourceHolder? source = null;
@@ -196,7 +196,7 @@ public class MetadataExtensionsTest
     }
 
     [Fact]
-    public void MergeMetadata_ShouldNotOverwriteExistingKeys()
+    public void MergeMetadata_KeyExists_DoesNotOverwrite()
     {
         var source = new SourceHolder();
 
@@ -214,7 +214,7 @@ public class MetadataExtensionsTest
     }
 
     [Fact]
-    public void MergeMetadata_NullDestinationStorage_ShouldReturnNull()
+    public void MergeMetadata_DestinationStorageIsNull_ReturnsNull()
     {
         var dest = new NullMetadataHolder();
         var source = new SourceHolder();
@@ -228,7 +228,7 @@ public class MetadataExtensionsTest
     }
 
     [Fact]
-    public void MergeMetadata_NullSourceStorage_ShouldReturnNull()
+    public void MergeMetadata_SourceStorageIsNull_ReturnsNull()
     {
         var dest = new DestHolder();
         var source = new NullMetadataHolder();

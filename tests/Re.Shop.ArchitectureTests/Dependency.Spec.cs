@@ -24,7 +24,7 @@ namespace ArchitectureTests;
 public sealed class DependencySpec
 {
     [Fact]
-    public void SharedKernel_depends_on_nothing()
+    public void SharedKernel_DependsOnNothing_IsEmpty()
     {
         var result = Types.InAssembly(typeof(SharedKernelMarker).Assembly)
             .Should().NotHaveDependencyOn("Domain")
@@ -39,7 +39,7 @@ public sealed class DependencySpec
     }
 
     [Fact]
-    public void Domain_depends_only_on_SharedKernel()
+    public void Domain_DependsOnlyOnSharedKernel()
     {
         var result = Types.InAssembly(typeof(DomainMarker).Assembly)
             .Should().NotHaveDependencyOn("Application")
@@ -53,7 +53,7 @@ public sealed class DependencySpec
     }
 
     [Fact]
-    public void Application_depends_inward_only()
+    public void Application_DependsInwardOnly()
     {
         var result = Types.InAssembly(typeof(ApplicationMarker).Assembly)
             .Should().NotHaveDependencyOn("Contracts")
@@ -66,7 +66,7 @@ public sealed class DependencySpec
     }
 
     [Fact]
-    public void Contracts_depends_on_nothing()
+    public void Contracts_DependsOnNothing_IsEmpty()
     {
         var result = Types.InAssembly(typeof(ContractsMarker).Assembly)
             .Should().NotHaveDependencyOn("SharedKernel")
@@ -81,7 +81,7 @@ public sealed class DependencySpec
     }
 
     [Fact]
-    public void Infrastructure_depends_inward_only()
+    public void Infrastructure_DependsInwardOnly()
     {
         var result = Types.InAssembly(typeof(InfrastructureMarker).Assembly)
             .Should().NotHaveDependencyOn("Re.Shop.Api")
@@ -92,7 +92,7 @@ public sealed class DependencySpec
     }
 
     [Fact]
-    public void Admin_depends_only_on_contracts_and_shared_kernel()
+    public void Admin_DependsOnlyOnContractsAndSharedKernel()
     {
         var result = Types.InAssembly(typeof(AdminMarker).Assembly)
             .Should().NotHaveDependencyOn("Domain")
@@ -105,7 +105,7 @@ public sealed class DependencySpec
     }
 
     [Fact]
-    public void Only_Infrastructure_and_Api_may_reference_entity_framework()
+    public void Infrastructure_Api_MayReferenceEntityFramework()
     {
         var subjectAssemblies = new[]
         {

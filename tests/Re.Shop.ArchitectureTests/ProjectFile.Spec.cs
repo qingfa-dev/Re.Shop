@@ -52,7 +52,7 @@ public sealed class ProjectFileSpec
     }
 
     [Fact]
-    public void AppHost_references_only_the_two_hosts()
+    public void AppHost_ReferencesOnlyTwoHosts()
     {
         var references = ProjectReferences("aspire/Re.AppHost/Re.AppHost.csproj");
 
@@ -61,7 +61,7 @@ public sealed class ProjectFileSpec
     }
 
     [Fact]
-    public void ServiceDefaults_references_no_shop_project()
+    public void ServiceDefaults_ReferencesNoShopProject()
     {
         var references = ProjectReferences("aspire/Re.ServiceDefaults/Re.ServiceDefaults.csproj");
 
@@ -69,7 +69,7 @@ public sealed class ProjectFileSpec
     }
 
     [Fact]
-    public void No_src_project_is_an_executable_host()
+    public void SrcProjects_NoExecutableHost()
     {
         var srcDirectory = Path.Combine(RepoRoot, "src");
         var offenders = new List<string>();

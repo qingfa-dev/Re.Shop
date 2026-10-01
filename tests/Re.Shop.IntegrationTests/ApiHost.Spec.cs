@@ -14,7 +14,7 @@ namespace IntegrationTests;
 public sealed class ApiHostSpec
 {
     [Fact]
-    public async Task Api_host_boots_and_serves_requests_without_a_server_error()
+    public async Task ApiHost_BootsAndServesRequests_NoServerError()
     {
         await using var factory = new WebApplicationFactory<Program>();
         using var client = factory.CreateClient();

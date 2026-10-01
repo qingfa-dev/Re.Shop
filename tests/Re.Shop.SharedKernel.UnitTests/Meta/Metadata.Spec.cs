@@ -16,7 +16,7 @@ public class MetadataInterfaceTest
     }
 
     [Fact]
-    public void Metadata_ShouldExposeDictionary()
+    public void Metadata_Initialized_ExposesDictionary()
     {
         var holder = new MetadataHolder();
 
@@ -25,7 +25,7 @@ public class MetadataInterfaceTest
     }
 
     [Fact]
-    public void Metadata_ShouldSupportReadAndWrite()
+    public void Metadata_KeyValueSet_SupportsReadAndWrite()
     {
         var holder = new MetadataHolder();
 
@@ -37,7 +37,7 @@ public class MetadataInterfaceTest
     }
 
     [Fact]
-    public void MetadataHolder_ShouldImplementIMetadata()
+    public void MetadataHolder_Created_ImplementsIMetadata()
     {
         var holder = new MetadataHolder();
 
@@ -45,7 +45,7 @@ public class MetadataInterfaceTest
     }
 
     [Fact]
-    public void Metadata_ShouldAllowNull()
+    public void Metadata_NullStorage_ReturnsNull()
     {
         IMetadata holder = new NullMetadataHolder();
 
