@@ -10,5 +10,6 @@ fi
 "$SCRIPTS_DIR/test.sh" all
 "$SCRIPTS_DIR/lint.sh" all
 "$SCRIPTS_DIR/type-check.sh" all
+"$SCRIPTS_DIR/readme-check.sh" all
 
 step "all checks passed"

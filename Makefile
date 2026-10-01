@@ -6,7 +6,7 @@
 #
 # Packages: api | admin | storefront | all (default)
 
-ACTIONS  := install tools setup build test lint type-check format check run outdated clean
+ACTIONS  := install tools setup build test lint type-check format readme-check check run outdated clean
 PACKAGES := api admin storefront all
 
 .DEFAULT_GOAL := help
@@ -52,7 +52,8 @@ help:
 	@echo "  lint          verify formatting (.NET) and lint the frontend"
 	@echo "  type-check    type-check the frontend"
 	@echo "  format        apply formatting (.NET and frontend)"
-	@echo "  check         build -> test -> lint -> type-check"
+	@echo "  readme-check  verify folder READMEs against guide/folder-readme-guide.md"
+	@echo "  check         build -> test -> lint -> type-check -> readme-check"
 	@echo "  run           start a package (no package = full Aspire stack)"
 	@echo "  outdated      show NuGet and npm dependency drift"
 	@echo "  clean         remove build output (keeps node_modules)"
