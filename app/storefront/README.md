@@ -1,75 +1,80 @@
 # storefront
 
-This template should help get you started developing with Vue 3 in Vite.
+Vue 3 single-page application for the customer-facing shop. _entrypoint · consumer_
 
-## Recommended IDE Setup
+## Summary
 
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+The storefront is a Vite + Vue 3 SPA and a pnpm workspace package named
+`re-shop-storefront`. It is the only non-.NET application in the repository and
+is started by the Aspire AppHost through `AddViteApp` rather than `dotnet run`.
+Its package versions come from the `catalog:` in the root `pnpm-workspace.yaml`,
+so this folder deliberately declares no versions of its own.
 
-This project replaces its workspace TypeScript package with [typescript-native-bridge](https://github.com/johnsoncodehk/typescript-native-bridge). Command-line tools use the bridge automatically. To use it in VS Code after installing dependencies, accept the prompt to use the workspace TypeScript version. If the prompt does not appear, run **TypeScript: Select TypeScript Version** and choose **Use Workspace Version**.
+## Contains
 
-## Recommended Browser Setup
+| Path | Role | Notes |
+|---|---|---|
+| `src/` | Application code | Vue components, views, stores; _(no README)_ |
+| `e2e/` | Playwright journeys | Driven by `test:e2e`; _(no README)_ |
+| `public/` | Static assets | Served verbatim; _(no README)_ |
+| `package.json` | Package manifest | Name `re-shop-storefront`; every dependency is `catalog:` |
+| `vite.config.ts` | Build config | Vite |
+| `vitest.config.ts` | Unit test config | `pnpm test:unit` |
+| `playwright.config.ts` | E2E config | `pnpm test:e2e` |
+| `tsconfig*.json` | TypeScript config | `tsconfig.app.json` extends `../../tsconfig.base.json` |
+| `eslint.config.ts`, `.oxlintrc.json`, `.oxfmtrc.json` | Lint/format | `pnpm lint` runs oxlint then eslint |
+| `pnpm-workspace.yaml` | Nested workspace | See Notes — contains inert `overrides` |
+| `README.md` | This file | Replaces the original Vite template boilerplate |
 
-- Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd)
-  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
-- Firefox:
-  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
-  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
+## Boundaries
 
-## Type Support for `.vue` Imports in TS
+In scope:
+- Rendering, routing, and client-side state for the shop.
+- Consuming the API's HTTP contract.
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
+Out of scope:
+- Server-side logic and persistence → [`../api/README.md`](../api/README.md).
+- Admin tooling → [`../admin/README.md`](../admin/README.md).
+- .NET project configuration — this folder has no `.csproj`.
 
-## Customize configuration
+## Assumptions
 
-See [Vite Configuration Reference](https://vite.dev/config/).
+- Installed and run through the root workspace: `pnpm install` from the
+  repository root, not inside this folder.
+- Node comes from `fnm` in this environment; a system Node may fail to resolve
+  shared libraries.
+- `catalog:` entries are resolved against the **root** `pnpm-workspace.yaml`.
+- `tsconfig.app.json` extends `../../tsconfig.base.json`, so shared compiler
+  options live there rather than here.
+- Vitest is selected for unit tests and Playwright for E2E, despite spec §11.5
+  originally saying neither would be chosen.
 
-## Project Setup
+## Conventions
 
-```sh
-pnpm install
-```
+- No version literal appears in `package.json` — every value is `catalog:`.
+- Test files use the suffix `.Spec`-style naming from the frontend tooling;
+  directories are split into `src/` (unit) and `e2e/` (journeys).
 
-### Compile and Hot-Reload for Development
+## Reading Order
 
-```sh
-pnpm dev
-```
+1. `src/main.ts` — application bootstrap.
+2. `src/router/index.ts` — the route table.
+3. `src/views/` — the pages the router resolves to.
+4. `src/stores/` — shared client state.
+5. `e2e/` — Playwright journeys over the four above.
 
-### Type-Check, Compile and Minify for Production
+## Related
 
-```sh
-pnpm build
-```
+- Parent: [`../README.md`](../README.md)
+- Host wiring: [`../../aspire/Re.AppHost/README.md`](../../aspire/Re.AppHost/README.md)
+- Frontend section: [`../../README.md#frontend`](../../README.md#frontend)
+- Commands: `pnpm dev`, `pnpm build`, `pnpm test:unit`, `pnpm test:e2e`, `pnpm type-check`, `pnpm lint`
 
-### Run Unit Tests with [Vitest](https://vitest.dev/)
+## Notes
 
-```sh
-pnpm test:unit
-```
-
-### Run End-to-End Tests with [Playwright](https://playwright.dev)
-
-```sh
-# Install browsers for the first run
-npx playwright install
-
-# When testing on CI, must build the project first
-pnpm build
-
-# Runs the end-to-end tests
-pnpm test:e2e
-# Runs the tests only on Chromium
-pnpm test:e2e --project=chromium
-# Runs the tests of a specific file
-pnpm test:e2e tests/example.spec.ts
-# Runs the tests in debug mode
-pnpm test:e2e --debug
-```
-
-### Lint with [ESLint](https://eslint.org/)
-
-```sh
-pnpm lint
-```
+- `TEMP:` the nested `pnpm-workspace.yaml` in this folder carries `overrides`
+  for a Vue `rc` and `typescript-native-bridge` that are **inert** — pnpm does
+  not apply them from a nested workspace file. They were left untouched rather
+  than silently promoted to the root.
+- Known gap: `test:e2e` exists but the suite is minimal; `src/` holds little
+  beyond the scaffold's starting components.
