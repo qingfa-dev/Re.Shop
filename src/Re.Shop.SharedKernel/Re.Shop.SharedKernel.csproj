@@ -5,6 +5,11 @@
     <RootNamespace>SharedKernel</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <!--  Temporarily disable xml documentation generation until we have a proper doc generation
+    process in place. -->
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+
   </PropertyGroup>
+
 
 </Project>
