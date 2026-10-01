@@ -1,0 +1,11 @@
+{
+  // Shared by every TypeScript project under app/.
+  // Resolves @vue/tsconfig from the repo root, which is why it is a root
+  // devDependency rather than a storefront one.
+  "extends": "@vue/tsconfig/tsconfig.dom.json",
+  "compilerOptions": {
+    "noUncheckedIndexedAccess": true,
+    "isolatedModules": true,
+    "skipLibCheck": true
+  }
+}
