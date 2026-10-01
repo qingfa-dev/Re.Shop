@@ -49,10 +49,11 @@ project_path() {
   esac
 }
 
-# Path to the test project covering a package, where one exists.
-project_test_path() {
+# Test project paths covering a package, one per line. A package can hold
+# several kinds of test — an EndToEnd suite would be listed beside Api's here.
+project_test_paths() {
   case "$1" in
-    api) echo "tests/Re.Shop.Api.Tests/Re.Shop.Api.Tests.csproj" ;;
+    api) echo "tests/Re.Shop.IntegrationTests/Re.Shop.IntegrationTests.csproj" ;;
     *)   return 1 ;;
   esac
 }

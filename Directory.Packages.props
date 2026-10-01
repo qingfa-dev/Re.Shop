@@ -343,9 +343,10 @@
     <!-- Collector-based coverage: dotnet test -collect:"XPlat Code Coverage". -->
     <PackageVersion Include="coverlet.collector"            Version="10.0.1" />
 
-    <!-- License check: FluentAssertions 8.x is commercially licensed for
-         many uses. Confirm the license terms fit this project. -->
-    <PackageVersion Include="FluentAssertions"              Version="8.10.0" />
+    <!-- Shouldly (Apache-2.0) is free for commercial use. It replaced
+         FluentAssertions, whose 8.x line is commercially licensed for many
+         uses (see the retired comment on this entry). -->
+    <PackageVersion Include="Shouldly"                      Version="4.3.0" />
     <PackageVersion Include="Moq"                           Version="4.20.72" />
   </ItemGroup>
 

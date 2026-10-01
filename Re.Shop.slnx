@@ -18,8 +18,10 @@
     <Project Path="src/Re.Shop.SharedKernel/Re.Shop.SharedKernel.csproj" />
   </Folder>
   <Folder Name="/tests/">
-    <Project Path="tests/Re.Shop.Api.Tests/Re.Shop.Api.Tests.csproj" />
-    <Project Path="tests/Re.Shop.Architecture.Tests/Re.Shop.Architecture.Tests.csproj" />
-    <Project Path="tests/Re.Shop.Domain.Tests/Re.Shop.Domain.Tests.csproj" />
+    <Project Path="tests/Re.Shop.Application.UnitTests/Re.Shop.Application.UnitTests.csproj" />
+    <Project Path="tests/Re.Shop.ArchitectureTests/Re.Shop.ArchitectureTests.csproj" />
+    <Project Path="tests/Re.Shop.Domain.UnitTests/Re.Shop.Domain.UnitTests.csproj" />
+    <Project Path="tests/Re.Shop.IntegrationTests/Re.Shop.IntegrationTests.csproj" />
+    <Project Path="tests/Re.Shop.SharedKernel.UnitTests/Re.Shop.SharedKernel.UnitTests.csproj" />
   </Folder>
 </Solution>

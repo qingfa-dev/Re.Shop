@@ -10,7 +10,9 @@ case "$PKG" in
     ;;
   api)
     step "api tests"
-    dotnet test "$(project_test_path api)"
+    while IFS= read -r project; do
+      dotnet test "$project"
+    done < <(project_test_paths api)
     ;;
   admin)
     fail "no test project exists for 'admin'"
