@@ -9,18 +9,22 @@ public static class MetadataGuard
         if (string.IsNullOrWhiteSpace(key))
         {
             throw new ArgumentNullException(
-                nameof(key),
-                $"{MetadataConstant.Result.Failure.Key.NullOrWhitespace.Code} : {MetadataConstant.Result.Failure.Key.NullOrWhitespace.Message}");
+                paramName: nameof(key),
+                message:
+                    $"{MetadataConstant.Errors.Key.NullOrWhitespace.Code} : " +
+                    $"{MetadataConstant.Errors.Key.NullOrWhitespace.Message}");
         }
     }
 
-    public static void ValidateValue(object? value)
+    public static void ValidateValue([NotNull] object? value)
     {
         if (value is null)
         {
             throw new ArgumentNullException(
-                nameof(value),
-                $"{MetadataConstant.Result.Failure.Value.Null.Code} : {MetadataConstant.Result.Failure.Value.Null.Message}");
+                paramName: nameof(value),
+                message:
+                    $"{MetadataConstant.Errors.Value.Null.Code} : " +
+                    $"{MetadataConstant.Errors.Value.Null.Message}");
         }
     }
 }

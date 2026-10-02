@@ -8,8 +8,9 @@ This folder holds the five class libraries that make up Re.Shop's core, plus the
 directory-level MSBuild intent that applies to all of them. Dependencies point
 inward only: `SharedKernel` is referenced by everyone and references nothing,
 while `Infrastructure` reaches the furthest out. Nothing here is executable —
-`src/` is library code, and each project currently carries only its architecture
-marker until the scaffold's domain and application code lands.
+`src/` is library code. The Domain now contains validated value objects,
+identity and aggregate building blocks, and Mediator-backed event contracts;
+the other layers remain scaffolded around their architecture markers.
 
 ## Contains
 
@@ -72,6 +73,7 @@ Out of scope:
 
 ## Notes
 
-- Known gap: `Re.Shop.SharedKernel/Structures/{Eithers,Errors}` and
-  `Re.Shop.Domain/Events` are empty directories — no code was carried over.
-- Every `src/` project currently contains only its `*Marker.cs`.
+- Known gap: Application workflows and Infrastructure persistence adapters are
+  not implemented yet.
+- Domain contains real business contracts and value objects; each layer's
+  `*Marker.cs` remains only an assembly anchor.

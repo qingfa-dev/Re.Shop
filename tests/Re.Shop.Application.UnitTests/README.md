@@ -61,5 +61,5 @@ Out of scope:
 
 ## Notes
 
-- Known gap: contains no test files yet — `src/Re.Shop.Application/` currently
-  holds only its assembly marker, so there are no handlers to drive.
+- Known gap: contains no test files yet — Application use-case handlers have
+  not been implemented; Domain model behavior is covered by Domain unit specs.

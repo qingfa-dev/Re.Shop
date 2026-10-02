@@ -16,6 +16,10 @@ no container, no database, and no mocking framework.
 | Path | Role | Notes |
 |---|---|---|
 | `Re.Shop.Domain.UnitTests.csproj` | Project file | References `Re.Shop.Domain` + `Re.Shop.SharedKernel` |
+| `GlobalUsings.cs` | Test imports | Imports Shouldly |
+| `Contracts/` | Contract specs | Entity, aggregate, and Mediator event contracts |
+| `ValueObjects/` | Factory specs | Valid/invalid inputs and normalization for all sixteen value objects |
+| `Domain/` | Entity and aggregate specs | Identity, state-based events, event replay, and versioning |
 
 ## Boundaries
 
@@ -34,7 +38,8 @@ Out of scope:
 
 - Located under `tests/`, so `IsTestProject=true` and `IsPackable=false` apply
   automatically from the root `Directory.Build.props`.
-- A global `using Xunit;` is declared in the project file.
+- A global `using Xunit;` is declared in the project file; `GlobalUsings.cs`
+  imports Shouldly.
 
 ## Invariants
 
@@ -57,5 +62,5 @@ Out of scope:
 
 ## Notes
 
-- Known gap: contains no test files yet — `src/Re.Shop.Domain/` currently holds
-  only its assembly marker, so there are no invariants to assert.
+- Factory behavior, identity, aggregate event collection, and event-sourcing
+  lifecycle behavior are covered by focused unit specs.

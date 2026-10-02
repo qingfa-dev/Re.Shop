@@ -34,9 +34,9 @@ Out of scope:
 
 ## Assumptions
 
-- `src/` and `app/` keep their `*Marker` type — markers are the only anchor
-  available, since the plan's original anchors (`Entity<Guid>`, `ShopDbContext`)
-  do not exist in this scaffold.
+- `src/` and `app/` keep their `*Marker` type as an assembly anchor. Domain
+  entity/aggregate types are validated by Domain unit specs; `ShopDbContext`
+  does not exist yet.
 - `RepoRoot` is located by walking up from the test output until `Re.Shop.slnx`
   is found.
 - NetArchTest.Rules 1.3.2, Shouldly 4.3.0 and xunit v3 are pinned centrally in
@@ -63,7 +63,8 @@ Out of scope:
 
 ## Notes
 
-- Known gap: rules 1–5 are vacuous while `src/` contains only markers — there are
-  no types that could violate them. They start biting when domain code lands.
+- Domain now contains value objects, entity/aggregate bases, and event contracts,
+  so the project-reference rules apply to real model code. Other source layers
+  still primarily contain their assembly markers.
 - All eight §5.3 rules are covered; the original plan's Task 10 had nine methods
   and missed rule 6.
