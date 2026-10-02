@@ -345,20 +345,29 @@ Dotted segments here identify **scope/variant**, not architectural role.
 Structured, agnostic shape:
 
 ```text
-<Subject>.<Field>.<Rule>
+<subject>.<field>.<rule>
 ```
+
+Each segment is lower snake_case; split PascalCase words at segment
+boundaries (`TooLong` → `too_long`, `StoreScoped` → `store_scoped`).
 
 Examples:
 
 ```text
-Order.ShippingAddress.Required
-Order.Total.Positive
-User.Email.Invalid
+order.shipping_address.required
+order.total.positive
+user.email.invalid
+localizable.property.too_long
+activatable.state.already_active
 ```
+
+State predicates without a natural field use `state` as the field
+segment (`activatable.state.not_active`).
 
 Avoid:
 
 ```text
+Order.ShippingAddress.Required
 OrderShippingInvalid
 OrderBadTotal
 InvalidOrderEmail

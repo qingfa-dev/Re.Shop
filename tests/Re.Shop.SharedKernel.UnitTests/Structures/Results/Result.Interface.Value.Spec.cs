@@ -51,14 +51,14 @@ public class ResultInterfaceValueSpec
     [Fact]
     public void IResult_InheritanceChain_ShouldBeCorrect()
     {
- typeof(IResult<string, Error>)
-     .GetInterfaces()
-     .Any(i => i.IsGenericType && i.GetGenericArguments().Length == 1)
-     .ShouldBeTrue();
+        typeof(IResult<string, Error>)
+            .GetInterfaces()
+            .Any(i => i.IsGenericType && i.GetGenericArguments().Length == 1)
+            .ShouldBeTrue();
 
- typeof(IValueOf<string>)
-     .IsAssignableFrom(typeof(IResult<string, Error>))
-     .ShouldBeTrue();
+        typeof(IValueOf<string>)
+            .IsAssignableFrom(typeof(IResult<string, Error>))
+            .ShouldBeTrue();
     }
 
     #endregion

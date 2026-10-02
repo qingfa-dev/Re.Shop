@@ -1,5 +1,4 @@
 <Project>
-
   <!--
     ======================================================================
     ReSys.eShop · Directory.Packages.props
@@ -25,22 +24,16 @@
         each upgrade.
     ======================================================================
   -->
-
-
   <!-- ====================================================================
        1. Central package management + shared version numbers
        ==================================================================== -->
-
   <PropertyGroup>
-
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-
     <!--
       Pin transitive dependencies to the versions listed here, giving a
       deterministic dependency graph (and a way to force security fixes).
     -->
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
-
     <!--
       Keep the first three in lockstep with the installed .NET 10 servicing
       release. They are separate properties because the families can ship
@@ -49,25 +42,19 @@
     <DotNetVersion>10.0.12</DotNetVersion>
     <AspNetCoreVersion>10.0.12</AspNetCoreVersion>
     <EFCoreVersion>10.0.12</EFCoreVersion>
-
     <!-- Microsoft.Extensions.* "extra" libraries (Hybrid cache, resilience,
          service discovery) ship on their own version line. -->
     <ExtensionsVersion>10.6.0</ExtensionsVersion>
-
     <!-- Must match Aspire.AppHost.Sdk in Re.AppHost.csproj; a lower value
          makes NuGet resolve Aspire.Hosting 13.6.0 (from the SDK) against
          13.4.6 integration packages, which throws MethodAccessException on
          Aspire.Hosting.Utils.PathNormalizer at runtime. -->
     <AspireVersion>13.6.0</AspireVersion>
     <OpenTelemetryVersion>1.17.0</OpenTelemetryVersion>
-
   </PropertyGroup>
-
-
   <!-- ====================================================================
        2. ASP.NET Core / HTTP / API
        ==================================================================== -->
-
   <ItemGroup>
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="$(AspNetCoreVersion)" />
     <!--
@@ -75,62 +62,46 @@
       Below the floor NuGet fails NU1109 (package downgrade) on app/api and the
       two test projects that reference it. 2.12.2 is the lowest release in range.
     -->
-    <PackageVersion Include="Microsoft.OpenApi"            Version="2.12.2" />
-    <PackageVersion Include="Scalar.AspNetCore"            Version="2.16.6" />
-
+    <PackageVersion Include="Microsoft.OpenApi" Version="2.12.2" />
+    <PackageVersion Include="Scalar.AspNetCore" Version="2.16.6" />
     <!-- Lightweight endpoint-routing abstraction. Only if the API adopts Carter. -->
     <PackageVersion Include="Carter" Version="10.0.0" />
-
     <!-- Reverse proxy / gateway. Intended for future platform deployments. -->
     <PackageVersion Include="Yarp.ReverseProxy" Version="2.3.0" />
   </ItemGroup>
-
-
   <!-- ====================================================================
        3. Vertical-slice application
        ==================================================================== -->
-
   <ItemGroup>
-
     <!--
       Mediator (source-generated). Only slices that use mediator-based
       dispatch should reference these. Reference the SourceGenerator with
       PrivateAssets="all" so it does not flow to consumers.
     -->
-    <PackageVersion Include="Mediator.Abstractions"   Version="3.0.2" />
+    <PackageVersion Include="Mediator.Abstractions" Version="3.0.2" />
     <PackageVersion Include="Mediator.SourceGenerator" Version="3.0.2" />
-
     <!-- Command / query validation. -->
-    <PackageVersion Include="FluentValidation"                             Version="12.1.1" />
+    <PackageVersion Include="FluentValidation" Version="12.1.1" />
     <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
-
     <!-- Object mapping. Use selectively; prefer direct projection where clearer. -->
-    <PackageVersion Include="Mapster"                     Version="10.0.9" />
+    <PackageVersion Include="Mapster" Version="10.0.9" />
     <PackageVersion Include="Mapster.DependencyInjection" Version="10.0.9" />
-
     <!-- Human-readable identifiers / URL slugs. -->
     <PackageVersion Include="Slugify.Core" Version="5.1.1" />
-
   </ItemGroup>
-
-
   <!-- ====================================================================
        4. Entity Framework Core + PostgreSQL
        ==================================================================== -->
-
   <ItemGroup>
-    <PackageVersion Include="Microsoft.EntityFrameworkCore"            Version="$(EFCoreVersion)" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="$(EFCoreVersion)" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="$(EFCoreVersion)" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design"     Version="$(EFCoreVersion)" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools"      Version="$(EFCoreVersion)" />
-
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="$(EFCoreVersion)" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="$(EFCoreVersion)" />
     <!-- Isolated development/testing only. Production persistence is PostgreSQL. -->
     <PackageVersion Include="Microsoft.EntityFrameworkCore.InMemory" Version="$(EFCoreVersion)" />
-
     <!-- PostgreSQL EF Core provider and snake_case naming support. -->
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.2" />
-    <PackageVersion Include="EFCore.NamingConventions"              Version="10.0.1" />
-
+    <PackageVersion Include="EFCore.NamingConventions" Version="10.0.1" />
     <!--
       Direct Npgsql access, only where PostgreSQL-specific features are
       intentionally used: advisory locks, database-level commands,
@@ -138,8 +109,6 @@
     -->
     <PackageVersion Include="Npgsql" Version="10.0.3" />
   </ItemGroup>
-
-
   <!-- ====================================================================
        5. PostgreSQL vector support (future AI / search)
        ====================================================================
@@ -147,173 +116,127 @@
        document analysis. Do not introduce into the financial core unless
        required.
        ==================================================================== -->
-
   <ItemGroup>
-    <PackageVersion Include="Pgvector"                    Version="0.3.2" />
+    <PackageVersion Include="Pgvector" Version="0.3.2" />
     <PackageVersion Include="Pgvector.EntityFrameworkCore" Version="0.3.0" />
   </ItemGroup>
-
-
   <!-- ====================================================================
        6. Caching / hosting / resilience / service discovery
        ==================================================================== -->
-
   <ItemGroup>
-    <PackageVersion Include="Microsoft.Extensions.Caching.Hybrid"             Version="$(ExtensionsVersion)" />
+    <PackageVersion Include="Microsoft.Extensions.Caching.Hybrid" Version="$(ExtensionsVersion)" />
     <PackageVersion Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="$(DotNetVersion)" />
-    <PackageVersion Include="Microsoft.Extensions.Hosting"                    Version="$(DotNetVersion)" />
-    <PackageVersion Include="Microsoft.Extensions.Http.Resilience"            Version="$(ExtensionsVersion)" />
-    <PackageVersion Include="Microsoft.Extensions.Resilience"                 Version="$(ExtensionsVersion)" />
-    <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery"           Version="$(ExtensionsVersion)" />
-    <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery.Yarp"      Version="$(ExtensionsVersion)" />
-
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="$(DotNetVersion)" />
+    <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="$(ExtensionsVersion)" />
+    <PackageVersion Include="Microsoft.Extensions.Resilience" Version="$(ExtensionsVersion)" />
+    <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="$(ExtensionsVersion)" />
+    <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery.Yarp" Version="$(ExtensionsVersion)" />
     <!--
       Direct Redis client. Redis is cache / collaboration infrastructure and
       must NOT become the source of truth for financial state.
     -->
     <PackageVersion Include="StackExchange.Redis" Version="2.9.32" />
   </ItemGroup>
-
-
   <!-- ====================================================================
        7. Authentication / authorization / security
        ==================================================================== -->
-
   <ItemGroup>
-    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer"          Version="$(AspNetCoreVersion)" />
-    <PackageVersion Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore"      Version="$(AspNetCoreVersion)" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="$(AspNetCoreVersion)" />
+    <PackageVersion Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="$(AspNetCoreVersion)" />
     <PackageVersion Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" Version="$(AspNetCoreVersion)" />
-    <PackageVersion Include="System.IdentityModel.Tokens.Jwt"                        Version="8.19.1" />
-
+    <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.19.1" />
     <!-- Google sign-in. -->
     <PackageVersion Include="Google.Apis.Auth" Version="1.75.0" />
-
     <!-- ECDSA implementation used by selected integrations. -->
     <PackageVersion Include="starkbank-ecdsa" Version="1.3.3" />
   </ItemGroup>
-
-
   <!-- ====================================================================
        8. Background jobs
        ==================================================================== -->
-
   <ItemGroup>
-    <PackageVersion Include="Hangfire.AspNetCore"         Version="1.8.23" />
+    <PackageVersion Include="Hangfire.AspNetCore" Version="1.8.23" />
     <PackageVersion Include="Hangfire.Redis.StackExchange" Version="1.12.0" />
-
     <!-- Non-durable storage: development and tests only. -->
     <PackageVersion Include="Hangfire.InMemory" Version="1.0.0" />
   </ItemGroup>
-
-
   <!-- ====================================================================
        9. Email / SMS integrations
        ==================================================================== -->
-
   <ItemGroup>
-    <PackageVersion Include="FluentEmail.Core"     Version="3.0.2" />
+    <PackageVersion Include="FluentEmail.Core" Version="3.0.2" />
     <PackageVersion Include="FluentEmail.SendGrid" Version="3.0.2" />
-    <PackageVersion Include="FluentEmail.Smtp"     Version="3.0.2" />
-
+    <PackageVersion Include="FluentEmail.Smtp" Version="3.0.2" />
     <!-- Direct SMTP/MIME, when more control is needed than FluentEmail gives. -->
     <PackageVersion Include="MailKit" Version="4.14.1" />
-
     <!-- SMS / communication provider. -->
     <PackageVersion Include="Sinch" Version="1.5.0" />
   </ItemGroup>
-
-
   <!-- ====================================================================
        10. Storage, billing, imaging, malware scanning
        ==================================================================== -->
-
   <ItemGroup>
-
     <!-- S3-compatible object storage: member documents, receipts, exported
          reports, attachments, backups/artifacts. -->
     <PackageVersion Include="AWSSDK.S3" Version="4.0.0" />
-
     <!-- Subscription billing. Billing stays OUTSIDE the financial eShop ledger. -->
     <PackageVersion Include="Stripe.net" Version="52.1.0" />
-
     <!-- Image / document processing (the Linux native assets are needed for
          container deployments). -->
-    <PackageVersion Include="SkiaSharp"                   Version="3.116.1" />
+    <PackageVersion Include="SkiaSharp" Version="3.116.1" />
     <PackageVersion Include="SkiaSharp.NativeAssets.Linux" Version="3.116.1" />
-
     <!-- ClamAV client for uploaded files. Keep scanning at the file/integration boundary. -->
     <PackageVersion Include="nClam" Version="7.0.0" />
-
   </ItemGroup>
-
-
   <!-- ====================================================================
        11. Collaboration / SignalR
        ====================================================================
        SignalR is NOT the financial source of truth. Expected flow:
          Command -> DB transaction -> Outbox -> Dispatcher -> SignalR
        ==================================================================== -->
-
   <ItemGroup>
     <PackageVersion Include="Microsoft.AspNetCore.SignalR.StackExchangeRedis" Version="$(AspNetCoreVersion)" />
-
     <!-- Optional compact serialization for collaboration/event payloads. -->
     <PackageVersion Include="MessagePack" Version="3.1.7" />
   </ItemGroup>
-
-
   <!-- ====================================================================
        12. Health checks
        ==================================================================== -->
-
   <ItemGroup>
-    <PackageVersion Include="AspNetCore.HealthChecks.Npgsql"    Version="9.0.0" />
-    <PackageVersion Include="AspNetCore.HealthChecks.Redis"     Version="9.0.0" />
+    <PackageVersion Include="AspNetCore.HealthChecks.Npgsql" Version="9.0.0" />
+    <PackageVersion Include="AspNetCore.HealthChecks.Redis" Version="9.0.0" />
     <PackageVersion Include="AspNetCore.HealthChecks.UI.Client" Version="9.0.0" />
   </ItemGroup>
-
-
   <!-- ====================================================================
        13. OpenTelemetry
        ==================================================================== -->
-
   <ItemGroup>
-    <PackageVersion Include="OpenTelemetry.Extensions.Hosting"               Version="$(OpenTelemetryVersion)" />
-    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol"   Version="$(OpenTelemetryVersion)" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore"       Version="$(OpenTelemetryVersion)" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.Http"             Version="$(OpenTelemetryVersion)" />
-
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="$(OpenTelemetryVersion)" />
+    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="$(OpenTelemetryVersion)" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="$(OpenTelemetryVersion)" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="$(OpenTelemetryVersion)" />
     <!-- These instrumentation packages version independently of the core SDK. -->
-    <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime"          Version="1.15.1" />
-    <PackageVersion Include="Npgsql.OpenTelemetry"                           Version="10.0.2" />
-
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.15.1" />
+    <PackageVersion Include="Npgsql.OpenTelemetry" Version="10.0.2" />
     <!-- Pre-release: revisit when stable versions ship. -->
     <PackageVersion Include="OpenTelemetry.Instrumentation.EntityFrameworkCore" Version="1.16.0-beta.1" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.StackExchangeRedis"  Version="1.16.0-beta.1" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.StackExchangeRedis" Version="1.16.0-beta.1" />
   </ItemGroup>
-
-
   <!-- ====================================================================
        14. .NET Aspire
        ==================================================================== -->
-
   <ItemGroup>
     <!-- Aspire 13 renamed the Node.js hosting package to ...Hosting.JavaScript.
          Keep only the one actually referenced and drop the other. -->
     <PackageVersion Include="Aspire.Hosting.JavaScript" Version="$(AspireVersion)" />
-    <PackageVersion Include="Aspire.Hosting.NodeJs"     Version="$(AspireVersion)" />
-
+    <PackageVersion Include="Aspire.Hosting.NodeJs" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="$(AspireVersion)" />
-    <PackageVersion Include="Aspire.Hosting.Python"     Version="$(AspireVersion)" />
-    <PackageVersion Include="Aspire.Hosting.Redis"      Version="$(AspireVersion)" />
+    <PackageVersion Include="Aspire.Hosting.Python" Version="$(AspireVersion)" />
+    <PackageVersion Include="Aspire.Hosting.Redis" Version="$(AspireVersion)" />
     <PackageVersion Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="$(AspireVersion)" />
-
     <!-- Community Toolkit packages follow the Aspire version line. -->
     <PackageVersion Include="CommunityToolkit.Aspire.Hosting.PostgreSQL.Extensions" Version="$(AspireVersion)" />
-    <PackageVersion Include="CommunityToolkit.Aspire.Hosting.PapercutSmtp"          Version="$(AspireVersion)" />
+    <PackageVersion Include="CommunityToolkit.Aspire.Hosting.PapercutSmtp" Version="$(AspireVersion)" />
   </ItemGroup>
-
-
   <!-- ====================================================================
        15. Source Link
        ====================================================================
@@ -322,35 +245,26 @@
        this entry. (It is kept only so existing PackageReferences do not
        fail with NU1010.)
        ==================================================================== -->
-
   <ItemGroup>
     <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="8.0.0" />
   </ItemGroup>
-
-
   <!-- ====================================================================
        16. Testing: platform, assertions, mocking, coverage
        ==================================================================== -->
-
   <ItemGroup>
-    <PackageVersion Include="Microsoft.NET.Test.Sdk"        Version="18.7.0" />
-    <PackageVersion Include="xunit.v3"                      Version="3.2.2" />
-    <PackageVersion Include="xunit.runner.visualstudio"     Version="3.1.5" />
-
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.7.0" />
+    <PackageVersion Include="xunit.v3" Version="3.2.2" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
     <!-- xunit.v3 already brings its analyzers; keep only if referenced directly. -->
-    <PackageVersion Include="xunit.analyzers"               Version="1.27.0" />
-
+    <PackageVersion Include="xunit.analyzers" Version="1.27.0" />
     <!-- Collector-based coverage: dotnet test -collect:"XPlat Code Coverage". -->
-    <PackageVersion Include="coverlet.collector"            Version="10.0.1" />
-
+    <PackageVersion Include="coverlet.collector" Version="10.0.1" />
     <!-- Shouldly (Apache-2.0) is free for commercial use. It replaced
          FluentAssertions, whose 8.x line is commercially licensed for many
          uses (see the retired comment on this entry). -->
-    <PackageVersion Include="Shouldly"                      Version="4.3.0" />
-    <PackageVersion Include="Moq"                           Version="4.20.72" />
+    <PackageVersion Include="Shouldly" Version="4.3.0" />
+    <PackageVersion Include="Moq" Version="4.20.72" />
   </ItemGroup>
-
-
   <!-- ====================================================================
        17. Integration testing
        ====================================================================
@@ -358,28 +272,20 @@
        production (sections 4 and 6), so tests run against the same
        pinned versions.
        ==================================================================== -->
-
   <ItemGroup>
-
     <!-- ASP.NET Core in-process hosting. -->
-    <PackageVersion Include="Microsoft.AspNetCore.TestHost"    Version="$(AspNetCoreVersion)" />
+    <PackageVersion Include="Microsoft.AspNetCore.TestHost" Version="$(AspNetCoreVersion)" />
     <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="$(AspNetCoreVersion)" />
-
     <!-- Real PostgreSQL / Redis in containers, plus database reset between tests. -->
     <PackageVersion Include="Testcontainers.PostgreSql" Version="4.15.0" />
-    <PackageVersion Include="Testcontainers.Redis"      Version="4.15.0" />
-    <PackageVersion Include="Respawn"                   Version="7.0.0" />
-
+    <PackageVersion Include="Testcontainers.Redis" Version="4.15.0" />
+    <PackageVersion Include="Respawn" Version="7.0.0" />
     <!-- Distributed integration tests (PostgreSQL, Redis, APIs, workers). -->
     <PackageVersion Include="Aspire.Hosting.Testing" Version="$(AspireVersion)" />
-
     <!-- Resilience tests. Polly.Core is also a transitive dependency of
          Microsoft.Extensions.Resilience, so this entry pins it solution-wide. -->
     <PackageVersion Include="Polly.Core" Version="8.7.0" />
-
   </ItemGroup>
-
-
   <!-- ====================================================================
        18. Architecture testing
        ====================================================================
@@ -389,9 +295,7 @@
          - Integration adapters must not leak into domain code
          - API must not access persistence internals directly
        ==================================================================== -->
-
   <ItemGroup>
     <PackageVersion Include="NetArchTest.Rules" Version="1.3.2" />
   </ItemGroup>
-
 </Project>
