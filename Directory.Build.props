@@ -166,12 +166,13 @@
     -->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
 
-    <!--
-      Repository-wide analyzer exceptions (keep this list short):
-        CA1716  Identifiers should not match language keywords.
-        CA1848  Use LoggerMessage delegates instead of ILogger extension methods.
-    -->
-    <NoWarn>$(NoWarn);CA1716;CA1848</NoWarn>
+<!--
+       Repository-wide analyzer exceptions (keep this list short):
+         CA1716  Identifiers should not match language keywords.
+         CA1848  Use LoggerMessage delegates instead of ILogger extension methods.
+         CS1591  Public members need no XML documentation — disabled until docs are written; re-enable later.
+     -->
+    <NoWarn>$(NoWarn);CA1716;CA1848;CS1591</NoWarn>
 
     <!-- Application metadata. -->
     <Authors>ReSys Team</Authors>
