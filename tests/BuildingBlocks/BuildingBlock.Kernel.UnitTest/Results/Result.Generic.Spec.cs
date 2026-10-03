@@ -38,16 +38,22 @@ public class ResultGenericSpec
     }
 
     /// <summary>CopyWith errors on failure should re-resolve status from new errors.</summary>
-    [Fact]
-    public void CopyWith_Errors_On_Failure_Should_ReResolve_Status_From_New_Errors()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void CopyWith_Errors_On_Failure_Should_ReResolve_Status_From_New_Errors(bool withValue)
     {
         // Arrange
         var failure = Result<int>.Fail(ResultStub.NotFoundError());
+        var errors = new List<Error> { ResultStub.ConflictError() };
 
         // Act
-        var copy = failure.CopyWith(errors: new List<Error> { ResultStub.ConflictError() });
+        var copy = withValue
+            ? failure.CopyWith(value: 0, errors: errors)
+            : failure.CopyWith(errors: errors);
 
         // Assert
+        copy.IsFailure.ShouldBeTrue();
         copy.StatusCode.ShouldBe(ResultConstant.StatusCode.Conflict);
         copy.Errors[0].Code.ShouldBe("test.conflict");
     }
@@ -74,63 +80,48 @@ public class ResultGenericSpec
     }
 
     /// <summary>CopyWith value on failure should clear value and use new errors.</summary>
-    [Fact]
-    public void CopyWith_Value_On_Failure_Should_Clear_Value_And_Use_New_Errors()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void CopyWith_To_Failure_Should_Clear_Value_And_Use_Errors(bool withValue)
     {
         // Arrange
-        var success = Result<int>.Ok(5);
+        var original = Result<int>.Ok(5);
+        var errors = new List<Error> { ResultStub.NotFoundError() };
 
         // Act
-        var copy = success.CopyWith(value: 0, isSuccess: false, errors: new List<Error> { ResultStub.NotFoundError() });
+        var copy = withValue
+            ? original.CopyWith(value: 0, isSuccess: false, errors: errors)
+            : original.CopyWith(isSuccess: false, errors: errors);
 
         // Assert
         copy.IsFailure.ShouldBeTrue();
         copy.Value.ShouldBe(default);
         copy.StatusCode.ShouldBe(ResultConstant.StatusCode.NotFound);
-    }
-
-    /// <summary>CopyWith value errors on failure should re-resolve status.</summary>
-    [Fact]
-    public void CopyWith_Value_Errors_On_Failure_Should_ReResolve_Status()
-    {
-        // Arrange
-        var failure = Result<int>.Fail(ResultStub.NotFoundError());
-
-        // Act
-        var copy = failure.CopyWith(value: 0, errors: new List<Error> { ResultStub.ConflictError() });
-
-        // Assert
-        copy.IsFailure.ShouldBeTrue();
-        copy.StatusCode.ShouldBe(ResultConstant.StatusCode.Conflict);
+        copy.TryGetValue(out _).ShouldBeFalse();
     }
 
     /// <summary>CopyWith errors on success should preserve status and value.</summary>
-    [Fact]
-    public void CopyWith_Errors_On_Success_Should_Preserve_Status_And_Value()
+    [Theory]
+    [InlineData(true, 7)]
+    [InlineData(false, 5)]
+    public void CopyWith_Errors_On_Success_Should_Preserve_Status_And_Value(bool withValue, int expectedValue)
     {
+        // Arrange
+        var success = Result<int>.Ok(5);
+        var errors = new List<Error> { ResultStub.NotFoundError() };
+
         // Act
-        var copy = Result<int>.Ok(5).CopyWith(errors: new List<Error> { ResultStub.NotFoundError() });
+        var copy = withValue
+            ? success.CopyWith(value: 7, errors: errors)
+            : success.CopyWith(errors: errors);
 
         // Assert
         copy.IsSuccess.ShouldBeTrue();
-        copy.Value.ShouldBe(5);
+        copy.Value.ShouldBe(expectedValue);
         copy.StatusCode.ShouldBe(ResultConstant.StatusCode.Ok);
         copy.Errors.Count.ShouldBe(1);
         copy.Errors[0].Code.ShouldBe("test.not_found");
-    }
-
-    /// <summary>CopyWith value errors on success should preserve status.</summary>
-    [Fact]
-    public void CopyWith_Value_Errors_On_Success_Should_Preserve_Status()
-    {
-        // Act
-        var copy = Result<int>.Ok(5).CopyWith(value: 7, errors: new List<Error> { ResultStub.NotFoundError() });
-
-        // Assert
-        copy.IsSuccess.ShouldBeTrue();
-        copy.Value.ShouldBe(7);
-        copy.StatusCode.ShouldBe(ResultConstant.StatusCode.Ok);
-        copy.Errors.Count.ShouldBe(1);
     }
 
     /// <summary>CopyWith value on failure without errors should preserve errors and status.</summary>
@@ -282,7 +273,7 @@ public class ResultGenericSpec
         success.ToString().ShouldBe("Success: 42");
 
         failure.TryGetValue(out _).ShouldBeFalse();
-        failure.ToString().ShouldContain("test.not_found");
+        failure.ToString().ShouldContain("Failure:");
         failure.ToString().ShouldContain("test.not_found");
     }
 

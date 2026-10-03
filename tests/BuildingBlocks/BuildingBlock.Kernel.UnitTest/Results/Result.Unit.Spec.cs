@@ -35,16 +35,24 @@ public class ResultUnitSpec
     }
 
     /// <summary>Unit.Equals(object) should range by input type.</summary>
-    [Fact]
-    public void Unit_Equals_Object_Should_Range_By_Input()
+    [Theory]
+    [MemberData(nameof(EqualsObjectCases))]
+    public void Unit_Equals_Object_Should_Range_By_Input(object? other, bool expected)
     {
         // Arrange
         var unit = new Unit();
 
         // Act & Assert
-        unit.Equals((object)new Unit()).ShouldBeTrue();
-        unit.Equals((object?)null).ShouldBeFalse();
-        unit.Equals("not-a-unit").ShouldBeFalse();
+        unit.Equals(other).ShouldBe(expected);
+    }
+
+    public static TheoryData<object?, bool> EqualsObjectCases()
+    {
+        var data = new TheoryData<object?, bool>();
+        data.Add(new Unit(), true);
+        data.Add(null, false);
+        data.Add("not-a-unit", false);
+        return data;
     }
 
     /// <summary>Unit.GetHashCode should return 0.</summary>

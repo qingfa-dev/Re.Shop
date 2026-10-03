@@ -39,9 +39,12 @@ public partial record Result : IResult<Error>, IEquatable<Result>
         List<Error> errors,
         int? statusCode = null)
     {
+        // Guard: Normalize null errors to the shared empty list.
         var normalizedErrors = errors ?? ResultConstant.Default.EmptyErrors;
+        // Compute: Default status code based on success state.
         var resolvedStatusCode = statusCode ?? (isSuccess ? ResultConstant.StatusCode.Ok : ResultConstant.StatusCode.InternalServerError);
 
+        // Guard: Validate status code, errors, and result consistency in priority order.
         var error = ResultGuard.ValidateStatusCode(resolvedStatusCode, isSuccess)
             ?? ResultGuard.ValidateErrors(normalizedErrors, isSuccess)
             ?? ResultGuard.ValidateResultConsistency(isSuccess, normalizedErrors);
@@ -73,7 +76,9 @@ public partial record Result : IResult<Error>, IEquatable<Result>
         int? statusCode = null,
         MetadataDictionary? metadata = null)
     {
+        // Compute: Resolve the new success state, preserving current when null.
         var resolvedIsSuccess = isSuccess ?? IsSuccess;
+        // Compute: Clone errors when provided; clear on success transition; copy existing otherwise.
         var resolvedErrors = errors is not null
             ? errors.ToList()
             : resolvedIsSuccess && !IsSuccess
@@ -81,6 +86,7 @@ public partial record Result : IResult<Error>, IEquatable<Result>
                 : [.. Errors];
         var statusWasChanged = isSuccess.HasValue && isSuccess.Value != IsSuccess;
         var errorsWereChanged = errors is not null;
+        // Compute: Resolve status code: explicit > status change > error-driven > current.
         var resolvedStatusCode = statusCode
             ?? (statusWasChanged
                 ? resolvedIsSuccess

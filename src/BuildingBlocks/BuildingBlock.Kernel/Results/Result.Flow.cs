@@ -14,6 +14,7 @@ public static partial class ResultExtension
         Func<List<Error>, TOut>? onFailure)
     {
         ArgumentNullException.ThrowIfNull(result);
+        // Compute: Invoke onSuccess when successful and callback is present; onFailure when failed and present; default otherwise.
         return result.IsSuccess ? onSuccess is null ? default! : onSuccess()
             : onFailure is null ? default! : onFailure(result.Errors);
     }
@@ -25,6 +26,7 @@ public static partial class ResultExtension
         Func<List<Error>, TOut>? onFailure)
     {
         ArgumentNullException.ThrowIfNull(result);
+        // Compute: Pass value to onSuccess when successful; invoke onFailure with errors when failed.
         return result.IsSuccess ? onSuccess is null ? default! : onSuccess(result.Value)
             : onFailure is null ? default! : onFailure(result.Errors);
     }
@@ -40,10 +42,12 @@ public static partial class ResultExtension
         if (result.IsSuccess)
         {
             var task = onSuccess?.Invoke(cancellationToken);
+            // Guard: Return default when onSuccess is null or returns null task.
             return task is null ? default! : await task.ConfigureAwait(false);
         }
 
         var failureTask = onFailure?.Invoke(result.Errors, cancellationToken);
+        // Guard: Return default when onFailure is null or returns null task.
         return failureTask is null
             ? default!
             : await failureTask.ConfigureAwait(false);
@@ -60,10 +64,12 @@ public static partial class ResultExtension
         if (result.IsSuccess)
         {
             var task = onSuccess?.Invoke(result.Value, cancellationToken);
+            // Guard: Return default when onSuccess is null or returns null task.
             return task is null ? default! : await task.ConfigureAwait(false);
         }
 
         var failureTask = onFailure?.Invoke(result.Errors, cancellationToken);
+        // Guard: Return default when onFailure is null or returns null task.
         return failureTask is null
             ? default!
             : await failureTask.ConfigureAwait(false);
@@ -77,8 +83,10 @@ public static partial class ResultExtension
     public static Result<TOut> Map<TOut>(this Result result, Func<TOut>? mapper)
     {
         ArgumentNullException.ThrowIfNull(result);
+        // Guard: Propagate failure without invoking mapper.
         if (result.IsFailure)
             return Result<TOut>.Fail(result.Errors, result.StatusCode);
+        // Guard: Missing mapper is a flow error.
         if (mapper is null)
             return Result<TOut>.Fail(ResultError.Flow.CallbackMissing(nameof(Map)));
 
@@ -91,8 +99,10 @@ public static partial class ResultExtension
         Func<TValue, TOut>? mapper)
     {
         ArgumentNullException.ThrowIfNull(result);
+        // Guard: Propagate failure without invoking mapper.
         if (result.IsFailure)
             return Result<TOut>.Fail(result.Errors, result.StatusCode);
+        // Guard: Missing mapper is a flow error.
         if (mapper is null)
             return Result<TOut>.Fail(ResultError.Flow.CallbackMissing(nameof(Map)));
 
@@ -106,12 +116,15 @@ public static partial class ResultExtension
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(result);
+        // Guard: Propagate failure without invoking mapper.
         if (result.IsFailure)
             return Result<TOut>.Fail(result.Errors, result.StatusCode);
+        // Guard: Missing mapper is a flow error.
         if (mapper is null)
             return Result<TOut>.Fail(ResultError.Flow.CallbackMissing(nameof(MapAsync)));
 
         var task = mapper(cancellationToken);
+        // Guard: Null task from mapper is a flow error.
         if (task is null)
             return Result<TOut>.Fail(ResultError.Flow.ResultMissing(nameof(MapAsync)));
         return Result<TOut>.Ok(await task.ConfigureAwait(false), result.StatusCode);
@@ -124,12 +137,15 @@ public static partial class ResultExtension
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(result);
+        // Guard: Propagate failure without invoking mapper.
         if (result.IsFailure)
             return Result<TOut>.Fail(result.Errors, result.StatusCode);
+        // Guard: Missing mapper is a flow error.
         if (mapper is null)
             return Result<TOut>.Fail(ResultError.Flow.CallbackMissing(nameof(MapAsync)));
 
         var task = mapper(result.Value, cancellationToken);
+        // Guard: Null task from mapper is a flow error.
         if (task is null)
             return Result<TOut>.Fail(ResultError.Flow.ResultMissing(nameof(MapAsync)));
         return Result<TOut>.Ok(await task.ConfigureAwait(false), result.StatusCode);
@@ -143,11 +159,14 @@ public static partial class ResultExtension
     public static Result Bind<TValue>(this Result<TValue> result, Func<TValue, Result>? binder)
     {
         ArgumentNullException.ThrowIfNull(result);
+        // Guard: Propagate failure without invoking binder.
         if (result.IsFailure)
             return Result.Failure(result.Errors, result.StatusCode);
+        // Guard: Missing binder is a flow error.
         if (binder is null)
             return Result.Fail(ResultError.Flow.CallbackMissing(nameof(Bind)));
 
+        // Compute: Invoke binder; null result is a flow error.
         return binder(result.Value)
             ?? Result.Fail(ResultError.Flow.ResultMissing(nameof(Bind)));
     }
@@ -158,11 +177,14 @@ public static partial class ResultExtension
         Func<TValue, Result<TOut>>? binder)
     {
         ArgumentNullException.ThrowIfNull(result);
+        // Guard: Propagate failure without invoking binder.
         if (result.IsFailure)
             return Result<TOut>.Fail(result.Errors, result.StatusCode);
+        // Guard: Missing binder is a flow error.
         if (binder is null)
             return Result<TOut>.Fail(ResultError.Flow.CallbackMissing(nameof(Bind)));
 
+        // Compute: Invoke binder; null result is a flow error.
         return binder(result.Value)
             ?? Result<TOut>.Fail(ResultError.Flow.ResultMissing(nameof(Bind)));
     }
@@ -174,12 +196,15 @@ public static partial class ResultExtension
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(result);
+        // Guard: Propagate failure without invoking binder.
         if (result.IsFailure)
             return Result.Failure(result.Errors, result.StatusCode);
+        // Guard: Missing binder is a flow error.
         if (binder is null)
             return Result.Fail(ResultError.Flow.CallbackMissing(nameof(BindAsync)));
 
         var task = binder(result.Value, cancellationToken);
+        // Guard: Null task from binder is a flow error.
         if (task is null)
             return Result.Fail(ResultError.Flow.ResultMissing(nameof(BindAsync)));
         return await task.ConfigureAwait(false)
@@ -274,21 +299,26 @@ public static partial class ResultExtension
         CancellationToken cancellationToken = default)
         => EnsureAsyncCore(result, predicate, onViolation, cancellationToken);
 
-    private static Result<TValue> EnsureCore<TValue>(
+     private static Result<TValue> EnsureCore<TValue>(
         Result<TValue> result,
         Func<TValue, bool>? predicate,
         Func<TValue, Error?>? errorFactory)
     {
         ArgumentNullException.ThrowIfNull(result);
+        // Guard: Propagate failure without invoking predicate.
         if (result.IsFailure)
             return result;
+        // Guard: Missing predicate is a flow error.
         if (predicate is null)
             return Result<TValue>.Fail(ResultError.Flow.CallbackMissing(nameof(Ensure)));
+        // Guard: Predicate satisfied; return original result.
         if (predicate(result.Value))
             return result;
+        // Guard: Missing error factory is a flow error.
         if (errorFactory is null)
             return Result<TValue>.Fail(ResultError.Flow.CallbackMissing("Ensure error"));
 
+        // Compute: Invoke error factory; null error is a flow error.
         var error = errorFactory(result.Value);
         return error is null
             ? Result<TValue>.Fail(ResultError.Flow.ErrorMissing(nameof(Ensure)))
@@ -302,23 +332,30 @@ public static partial class ResultExtension
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(result);
+        // Guard: Propagate failure without invoking predicate.
         if (result.IsFailure)
             return result;
+        // Guard: Missing predicate is a flow error.
         if (predicate is null)
             return Result<TValue>.Fail(ResultError.Flow.CallbackMissing(nameof(EnsureAsync)));
 
         var predicateTask = predicate(result.Value, cancellationToken);
+        // Guard: Null predicate task is a flow error.
         if (predicateTask is null)
             return Result<TValue>.Fail(ResultError.Flow.ResultMissing(nameof(EnsureAsync)));
+        // Guard: Predicate satisfied; return original result.
         if (await predicateTask.ConfigureAwait(false))
             return result;
+        // Guard: Missing error factory is a flow error.
         if (errorFactory is null)
             return Result<TValue>.Fail(ResultError.Flow.CallbackMissing("EnsureAsync error"));
 
         var errorTask = errorFactory(result.Value, cancellationToken);
+        // Guard: Null error task is a flow error.
         if (errorTask is null)
             return Result<TValue>.Fail(ResultError.Flow.ResultMissing("EnsureAsync error"));
         var error = await errorTask.ConfigureAwait(false);
+        // Compute: Null error from factory is a flow error.
         return error is null
             ? Result<TValue>.Fail(ResultError.Flow.ErrorMissing(nameof(EnsureAsync)))
             : Result<TValue>.Fail(error);
@@ -334,11 +371,14 @@ public static partial class ResultExtension
         Func<List<Error>, Result>? recovery)
     {
         ArgumentNullException.ThrowIfNull(result);
+        // Guard: Propagate success without invoking recovery.
         if (result.IsSuccess)
             return result;
+        // Guard: Missing recovery is a flow error.
         if (recovery is null)
             return Result.Fail(ResultError.Flow.CallbackMissing(nameof(Recover)));
 
+        // Compute: Invoke recovery; null result is a flow error.
         return recovery(result.Errors)
             ?? Result.Fail(ResultError.Flow.ResultMissing(nameof(Recover)));
     }
@@ -349,11 +389,14 @@ public static partial class ResultExtension
         Func<List<Error>, TValue>? recovery)
     {
         ArgumentNullException.ThrowIfNull(result);
+        // Guard: Propagate success without invoking recovery.
         if (result.IsSuccess)
             return result;
+        // Guard: Missing recovery is a flow error.
         if (recovery is null)
             return Result<TValue>.Fail(ResultError.Flow.CallbackMissing(nameof(Recover)));
 
+        // Compute: Invoke recovery with errors; use returned value.
         return Result<TValue>.Ok(recovery(result.Errors));
     }
 
@@ -363,11 +406,14 @@ public static partial class ResultExtension
         Func<List<Error>, Result<TValue>>? recovery)
     {
         ArgumentNullException.ThrowIfNull(result);
+        // Guard: Propagate success without invoking recovery.
         if (result.IsSuccess)
             return result;
+        // Guard: Missing recovery is a flow error.
         if (recovery is null)
             return Result<TValue>.Fail(ResultError.Flow.CallbackMissing(nameof(Recover)));
 
+        // Compute: Invoke recovery with errors; null result is a flow error.
         return recovery(result.Errors)
             ?? Result<TValue>.Fail(ResultError.Flow.ResultMissing(nameof(Recover)));
     }
@@ -379,15 +425,20 @@ public static partial class ResultExtension
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(result);
+        // Guard: Propagate success without invoking recovery.
         if (result.IsSuccess)
             return result;
+        // Guard: Missing recovery is a flow error.
         if (recovery is null)
             return Result.Fail(ResultError.Flow.CallbackMissing(nameof(RecoverAsync)));
 
         var task = recovery(result.Errors, cancellationToken);
+        // Guard: Null recovery task is a flow error.
         if (task is null)
             return Result.Fail(ResultError.Flow.ResultMissing(nameof(RecoverAsync)));
-        return await task.ConfigureAwait(false)
+        var recovered = await task.ConfigureAwait(false);
+        // Compute: Null result from recovery is a flow error.
+        return recovered
             ?? Result.Fail(ResultError.Flow.ResultMissing(nameof(RecoverAsync)));
     }
 
@@ -398,14 +449,18 @@ public static partial class ResultExtension
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(result);
+        // Guard: Propagate success without invoking recovery.
         if (result.IsSuccess)
             return result;
+        // Guard: Missing recovery is a flow error.
         if (recovery is null)
             return Result<TValue>.Fail(ResultError.Flow.CallbackMissing(nameof(RecoverAsync)));
 
         var task = recovery(result.Errors, cancellationToken);
+        // Guard: Null recovery task is a flow error.
         if (task is null)
             return Result<TValue>.Fail(ResultError.Flow.ResultMissing(nameof(RecoverAsync)));
+        // Compute: Use recovered value.
         return Result<TValue>.Ok(await task.ConfigureAwait(false));
     }
 
@@ -416,15 +471,20 @@ public static partial class ResultExtension
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(result);
+        // Guard: Propagate success without invoking recovery.
         if (result.IsSuccess)
             return result;
+        // Guard: Missing recovery is a flow error.
         if (recovery is null)
             return Result<TValue>.Fail(ResultError.Flow.CallbackMissing(nameof(RecoverAsync)));
 
         var task = recovery(result.Errors, cancellationToken);
+        // Guard: Null recovery task is a flow error.
         if (task is null)
             return Result<TValue>.Fail(ResultError.Flow.ResultMissing(nameof(RecoverAsync)));
-        return await task.ConfigureAwait(false)
+        var recovered = await task.ConfigureAwait(false);
+        // Compute: Null result from recovery is a flow error.
+        return recovered
             ?? Result<TValue>.Fail(ResultError.Flow.ResultMissing(nameof(RecoverAsync)));
     }
 
@@ -439,6 +499,7 @@ public static partial class ResultExtension
         Action<List<Error>>? onFailure = null)
     {
         ArgumentNullException.ThrowIfNull(result);
+        // Compute: Invoke the handler matching the result state.
         if (result.IsSuccess)
             onSuccess?.Invoke();
         else
@@ -453,6 +514,7 @@ public static partial class ResultExtension
         Action<List<Error>>? onFailure = null)
     {
         ArgumentNullException.ThrowIfNull(result);
+        // Compute: Invoke the handler matching the result state with the value.
         if (result.IsSuccess)
             onSuccess?.Invoke(result.Value);
         else
@@ -471,6 +533,7 @@ public static partial class ResultExtension
         if (result.IsSuccess && onSuccess is not null)
         {
             var task = onSuccess(cancellationToken);
+            // Guard: Null task from onSuccess is a flow error.
             if (task is null)
                 return Result.Fail(ResultError.Flow.ResultMissing(nameof(SwitchAsync)));
             await task.ConfigureAwait(false);
@@ -478,6 +541,7 @@ public static partial class ResultExtension
         else if (result.IsFailure && onFailure is not null)
         {
             var task = onFailure(result.Errors, cancellationToken);
+            // Guard: Null task from onFailure is a flow error.
             if (task is null)
                 return Result.Fail(ResultError.Flow.ResultMissing(nameof(SwitchAsync)));
             await task.ConfigureAwait(false);
@@ -496,6 +560,7 @@ public static partial class ResultExtension
         if (result.IsSuccess && onSuccess is not null)
         {
             var task = onSuccess(result.Value, cancellationToken);
+            // Guard: Null task from onSuccess is a flow error.
             if (task is null)
                 return Result<TValue>.Fail(ResultError.Flow.ResultMissing(nameof(SwitchAsync)));
             await task.ConfigureAwait(false);
@@ -503,6 +568,7 @@ public static partial class ResultExtension
         else if (result.IsFailure && onFailure is not null)
         {
             var task = onFailure(result.Errors, cancellationToken);
+            // Guard: Null task from onFailure is a flow error.
             if (task is null)
                 return Result<TValue>.Fail(ResultError.Flow.ResultMissing(nameof(SwitchAsync)));
             await task.ConfigureAwait(false);
@@ -518,6 +584,7 @@ public static partial class ResultExtension
     public static Result Tap(this Result result, Action? onSuccess)
     {
         ArgumentNullException.ThrowIfNull(result);
+        // Compute: Invoke onSuccess only when the result is a success.
         if (result.IsSuccess)
             onSuccess?.Invoke();
         return result;
@@ -527,6 +594,7 @@ public static partial class ResultExtension
     public static Result<TValue> Tap<TValue>(this Result<TValue> result, Action<TValue>? onSuccess)
     {
         ArgumentNullException.ThrowIfNull(result);
+        // Compute: Invoke onSuccess with the value only when the result is a success.
         if (result.IsSuccess)
             onSuccess?.Invoke(result.Value);
         return result;
@@ -536,6 +604,7 @@ public static partial class ResultExtension
     public static Result TapError(this Result result, Action<List<Error>>? onFailure)
     {
         ArgumentNullException.ThrowIfNull(result);
+        // Compute: Invoke onFailure only when the result is a failure.
         if (result.IsFailure)
             onFailure?.Invoke(result.Errors);
         return result;
@@ -547,6 +616,7 @@ public static partial class ResultExtension
         Action<List<Error>>? onFailure)
     {
         ArgumentNullException.ThrowIfNull(result);
+        // Compute: Invoke onFailure with errors only when the result is a failure.
         if (result.IsFailure)
             onFailure?.Invoke(result.Errors);
         return result;
@@ -562,6 +632,7 @@ public static partial class ResultExtension
         if (result.IsSuccess && onSuccess is not null)
         {
             var task = onSuccess(cancellationToken);
+            // Guard: Null task from onSuccess is a flow error.
             if (task is null)
                 return Result.Fail(ResultError.Flow.ResultMissing(nameof(TapAsync)));
             await task.ConfigureAwait(false);
@@ -579,6 +650,7 @@ public static partial class ResultExtension
         if (result.IsSuccess && onSuccess is not null)
         {
             var task = onSuccess(result.Value, cancellationToken);
+            // Guard: Null task from onSuccess is a flow error.
             if (task is null)
                 return Result<TValue>.Fail(ResultError.Flow.ResultMissing(nameof(TapAsync)));
             await task.ConfigureAwait(false);
@@ -596,6 +668,7 @@ public static partial class ResultExtension
         if (result.IsFailure && onFailure is not null)
         {
             var task = onFailure(result.Errors, cancellationToken);
+            // Guard: Null task from onFailure is a flow error.
             if (task is null)
                 return Result.Fail(ResultError.Flow.ResultMissing(nameof(TapErrorAsync)));
             await task.ConfigureAwait(false);
@@ -613,6 +686,7 @@ public static partial class ResultExtension
         if (result.IsFailure && onFailure is not null)
         {
             var task = onFailure(result.Errors, cancellationToken);
+            // Guard: Null task from onFailure is a flow error.
             if (task is null)
                 return Result<TValue>.Fail(ResultError.Flow.ResultMissing(nameof(TapErrorAsync)));
             await task.ConfigureAwait(false);
@@ -628,6 +702,7 @@ public static partial class ResultExtension
     public static TValue ValueOrThrow<TValue>(this Result<TValue> result)
     {
         ArgumentNullException.ThrowIfNull(result);
+        // Guard: Throw on failure with error details.
         if (result.IsFailure)
             throw new InvalidOperationException(string.Join(", ", result.Errors.Select(e => e.ToString())));
 
@@ -638,6 +713,7 @@ public static partial class ResultExtension
     public static TValue ValueOr<TValue>(this Result<TValue> result, TValue fallback)
     {
         ArgumentNullException.ThrowIfNull(result);
+        // Compute: Return value on success; fallback on failure.
         return result.IsSuccess ? result.Value : fallback;
     }
 

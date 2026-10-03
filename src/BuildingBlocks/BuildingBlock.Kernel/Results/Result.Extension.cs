@@ -15,6 +15,7 @@ public static partial class ResultExtension
     public static Result WithMetadata(this Result result, string key, object value)
     {
         ArgumentNullException.ThrowIfNull(result);
+        // Compute: Copy and set the metadata entry.
         var copy = result.CopyWith();
         copy.SetValue(key, value);
         return copy;
@@ -27,6 +28,7 @@ public static partial class ResultExtension
     public static Result WithStatus(this Result result, int statusCode)
     {
         ArgumentNullException.ThrowIfNull(result);
+        // Compute: Copy with the new status code.
         return result.CopyWith(statusCode: statusCode);
     }
 
@@ -46,6 +48,7 @@ public static partial class ResultExtension
         object value)
     {
         ArgumentNullException.ThrowIfNull(result);
+        // Compute: Copy and set the metadata entry.
         var copy = result.CopyWith();
         copy.SetValue(key, value);
         return copy;
@@ -61,6 +64,7 @@ public static partial class ResultExtension
         int statusCode)
     {
         ArgumentNullException.ThrowIfNull(result);
+        // Compute: Copy with the new status code.
         return result.CopyWith(statusCode: statusCode);
     }
 

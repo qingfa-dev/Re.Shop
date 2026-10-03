@@ -79,37 +79,24 @@ public class ResultFactorySpec
         result.StatusCode.ShouldBe(ResultConstant.StatusCode.InternalServerError);
     }
 
-    /// <summary>Success factory should reject failure status code.</summary>
-    [Fact]
-    public void Success_Factory_Should_Reject_Failure_Status_Code()
+    /// <summary>Factory validation should reject invalid input.</summary>
+    [Theory]
+    [InlineData("success-with-failure-status")]
+    [InlineData("failure-with-success-status")]
+    [InlineData("failure-with-empty-errors")]
+    public void Factory_Validation_Should_Reject_Invalid_Input(string scenario)
     {
         // Act
-        var act = () => Result.Success(ResultConstant.StatusCode.NotFound);
-
-        // Assert
-        Should.Throw<ArgumentException>(act);
-    }
-
-    /// <summary>Failure factory should reject success status code.</summary>
-    [Fact]
-    public void Failure_Factory_Should_Reject_Success_Status_Code()
-    {
-        // Arrange
-        var error = ResultStub.NotFoundError();
-
-        // Act
-        var act = () => Result.Fail(new[] { error }, ResultConstant.StatusCode.Ok);
-
-        // Assert
-        Should.Throw<ArgumentException>(act);
-    }
-
-    /// <summary>Failure factory should reject empty error list.</summary>
-    [Fact]
-    public void Failure_Factory_Should_Reject_Empty_Error_List()
-    {
-        // Act
-        var act = () => Result.Fail(Array.Empty<Error>());
+        Action act = scenario switch
+        {
+            "success-with-failure-status"
+                => () => { _ = Result.Success(ResultConstant.StatusCode.NotFound); },
+            "failure-with-success-status"
+                => () => { _ = Result.Fail(new[] { ResultStub.NotFoundError() }, ResultConstant.StatusCode.Ok); },
+            "failure-with-empty-errors"
+                => () => { _ = Result.Fail(Array.Empty<Error>()); },
+            _ => throw new ArgumentOutOfRangeException(nameof(scenario)),
+        };
 
         // Assert
         Should.Throw<ArgumentException>(act);

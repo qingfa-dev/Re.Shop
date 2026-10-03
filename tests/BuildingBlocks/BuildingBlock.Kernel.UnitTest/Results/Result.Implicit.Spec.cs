@@ -9,36 +9,35 @@ public class ResultImplicitSpec
 {
     #region Non-generic Failure
 
-    /// <summary>Error should implicitly convert to non-generic failure.</summary>
-    [Fact]
-    public void Error_Should_Implicitly_Convert_To_NonGeneric_Failure()
+    /// <summary>Error and error array should implicitly convert to non-generic failure.</summary>
+    [Theory]
+    [MemberData(nameof(NonGenericFailureCases))]
+    public void Errors_Should_Implicitly_Convert_To_NonGeneric_Failure(bool singleError, Error[] errors)
     {
-        // Arrange
-        var error = ResultStub.NotFoundError();
-
         // Act
-        Result result = error;
-
-        // Assert
-        result.IsFailure.ShouldBeTrue();
-        result.Errors.ShouldBe(new[] { error });
-        result.StatusCode.ShouldBe(ResultConstant.StatusCode.NotFound);
-    }
-
-    /// <summary>Error array should implicitly convert to non-generic failure.</summary>
-    [Fact]
-    public void ErrorArray_Should_Implicitly_Convert_To_NonGeneric_Failure()
-    {
-        // Arrange
-        var errors = new[] { ResultStub.NotFoundError() };
-
-        // Act
-        Result result = errors;
+        Result result;
+        if (singleError)
+        {
+            result = errors[0];
+        }
+        else
+        {
+            result = errors;
+        }
 
         // Assert
         result.IsFailure.ShouldBeTrue();
         result.Errors.ShouldBe(errors);
         result.StatusCode.ShouldBe(ResultConstant.StatusCode.NotFound);
+    }
+
+    public static TheoryData<bool, Error[]> NonGenericFailureCases()
+    {
+        var data = new TheoryData<bool, Error[]>();
+        data.Add(true, [ResultStub.NotFoundError()]);
+        data.Add(false, [ResultStub.NotFoundError()]);
+        data.Add(false, [ResultStub.NotFoundError(), ResultStub.NotFoundError()]);
+        return data;
     }
 
     #endregion

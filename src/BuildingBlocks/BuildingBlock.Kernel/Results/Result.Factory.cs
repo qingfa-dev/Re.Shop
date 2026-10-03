@@ -102,6 +102,7 @@ public partial record Result
     {
         ArgumentNullException.ThrowIfNull(errors);
 
+        // Compute: Materialize errors and resolve status code from errors when omitted.
         var errorList = errors.ToList();
         var resolvedStatusCode = statusCode ?? ResolveStatus(errorList);
 
@@ -120,6 +121,7 @@ public partial record Result
     /// <returns>The resolved status code; defaults to 500.</returns>
     internal static int ResolveStatus(List<Error> errors)
     {
+        // Compute: Find the error with the highest severity.
         Error? highestSeverityError = null;
         foreach (var error in errors)
         {
@@ -127,15 +129,18 @@ public partial record Result
                 highestSeverityError = error;
         }
 
+        // Return: the severity-based status if found.
         if (highestSeverityError?.Status is int status)
             return status;
 
+        // Fallback: Return the status from the first error with a status.
         foreach (var error in errors)
         {
             if (error.Status is int fallbackStatus)
                 return fallbackStatus;
         }
 
+        // Fallback: Default to internal server error.
         return ResultConstant.StatusCode.InternalServerError;
     }
 

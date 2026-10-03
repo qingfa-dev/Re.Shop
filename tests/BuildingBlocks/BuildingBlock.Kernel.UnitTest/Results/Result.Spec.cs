@@ -10,33 +10,29 @@ public class ResultSpec
 {
     #region Constructor
 
-    /// <summary>Constructor should default to success with 200 when null errors and status.</summary>
-    [Fact]
-    public void Constructor_With_Null_Errors_And_Status_Should_Default_To_Success_Ok()
-    {
-        // Act
-        var result = new Result(isSuccess: true, errors: null!, statusCode: null);
-
-        // Assert
-        result.IsSuccess.ShouldBeTrue();
-        result.Errors.ShouldBeEmpty();
-        result.StatusCode.ShouldBe(ResultConstant.StatusCode.Ok);
-    }
-
-    /// <summary>Constructor should default to 500 when null status on failure.</summary>
-    [Fact]
-    public void Constructor_Failure_With_Null_Status_Should_Default_To_Internal_Server_Error()
+    /// <summary>Constructor should default status by state when status is null.</summary>
+    [Theory]
+    [InlineData(true, ResultConstant.StatusCode.Ok)]
+    [InlineData(false, ResultConstant.StatusCode.InternalServerError)]
+    public void Constructor_With_Null_Status_Should_Default_By_State(bool isSuccess, int expectedStatus)
     {
         // Arrange
-        var errors = new List<Error> { ResultStub.NotFoundError() };
+        List<Error>? errors = isSuccess ? null : new List<Error> { ResultStub.NotFoundError() };
 
         // Act
-        var result = new Result(isSuccess: false, errors: errors, statusCode: null);
+        var result = new Result(isSuccess, errors!, statusCode: null);
 
         // Assert
-        result.IsFailure.ShouldBeTrue();
-        result.Errors.ShouldBe(errors);
-        result.StatusCode.ShouldBe(ResultConstant.StatusCode.InternalServerError);
+        result.IsSuccess.ShouldBe(isSuccess);
+        result.StatusCode.ShouldBe(expectedStatus);
+        if (isSuccess)
+        {
+            result.Errors.ShouldBeEmpty();
+        }
+        else
+        {
+            result.Errors.ShouldBe(errors);
+        }
     }
 
     #endregion

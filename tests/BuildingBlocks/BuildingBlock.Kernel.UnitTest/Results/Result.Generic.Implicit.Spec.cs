@@ -10,29 +10,35 @@ public class ResultGenericImplicitSpec
     #region Success Conversion
 
     /// <summary>TValue should implicitly convert to generic success.</summary>
-    [Fact]
-    public void TValue_Should_Implicitly_Convert_To_Generic_Success()
+    [Theory]
+    [InlineData("value")]
+    [InlineData("")]
+    [InlineData("another value")]
+    public void TValue_Should_Implicitly_Convert_To_Generic_Success(string value)
     {
         // Act
-        Result<string> result = "value";
+        Result<string> result = value;
 
         // Assert
         result.IsSuccess.ShouldBeTrue();
-        result.Value.ShouldBe("value");
+        result.Value.ShouldBe(value);
         result.StatusCode.ShouldBe(ResultConstant.StatusCode.Ok);
         result.Errors.ShouldBeEmpty();
     }
 
     /// <summary>Value types should implicitly convert to generic success.</summary>
-    [Fact]
-    public void ValueType_Should_Implicitly_Convert_To_Generic_Success()
+    [Theory]
+    [InlineData(42)]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void ValueType_Should_Implicitly_Convert_To_Generic_Success(int value)
     {
         // Act
-        Result<int> result = 42;
+        Result<int> result = value;
 
         // Assert
         result.IsSuccess.ShouldBeTrue();
-        result.Value.ShouldBe(42);
+        result.Value.ShouldBe(value);
         result.StatusCode.ShouldBe(ResultConstant.StatusCode.Ok);
     }
 
@@ -59,109 +65,123 @@ public class ResultGenericImplicitSpec
     #region Failure Conversion
 
     /// <summary>Error should implicitly convert to generic failure.</summary>
-    [Fact]
-    public void Error_Should_Implicitly_Convert_To_Generic_Failure()
+    [Theory]
+    [MemberData(nameof(SingleErrorFailureCases))]
+    public void Error_Should_Implicitly_Convert_To_Generic_Failure(Error error, int expectedStatusCode)
     {
-        // Arrange
-        var error = ResultStub.NotFoundError();
-
         // Act
         Result<string> result = error;
 
         // Assert
         result.IsFailure.ShouldBeTrue();
         result.Errors.ShouldBe(new[] { error });
-        result.StatusCode.ShouldBe(ResultConstant.StatusCode.NotFound);
+        result.StatusCode.ShouldBe(expectedStatusCode);
         result.Value.ShouldBeNull();
     }
 
-    /// <summary>Error array should implicitly convert to generic failure.</summary>
-    [Fact]
-    public void ErrorArray_Should_Implicitly_Convert_To_Generic_Failure()
+    public static TheoryData<Error, int> SingleErrorFailureCases()
     {
-        // Arrange
-        var errors = new[] { ResultStub.NotFoundError() };
+        var data = new TheoryData<Error, int>();
+        data.Add(ResultStub.NotFoundError(), ResultConstant.StatusCode.NotFound);
+        data.Add(ResultStub.ConflictError(), ResultConstant.StatusCode.Conflict);
+        return data;
+    }
 
+    /// <summary>Error array should implicitly convert to generic failure.</summary>
+    [Theory]
+    [MemberData(nameof(StringErrorArrayCases))]
+    public void ErrorArray_Should_Implicitly_Convert_To_Generic_Failure(Error[] errors, int expectedStatusCode)
+    {
         // Act
         Result<string> result = errors;
 
         // Assert
         result.IsFailure.ShouldBeTrue();
         result.Errors.ShouldBe(errors);
-        result.StatusCode.ShouldBe(ResultConstant.StatusCode.NotFound);
+        result.StatusCode.ShouldBe(expectedStatusCode);
     }
 
-    /// <summary>Error list should implicitly convert to generic failure.</summary>
-    [Fact]
-    public void ErrorList_Should_Implicitly_Convert_To_Generic_Failure()
+    public static TheoryData<Error[], int> StringErrorArrayCases()
+    {
+        var data = new TheoryData<Error[], int>();
+        data.Add([ResultStub.NotFoundError()], ResultConstant.StatusCode.NotFound);
+        data.Add([ResultStub.ConflictError()], ResultConstant.StatusCode.Conflict);
+        return data;
+    }
+
+    /// <summary>Error list and multiple errors should implicitly convert to generic failure.</summary>
+    [Theory]
+    [MemberData(nameof(IntErrorCollectionCases))]
+    public void ErrorList_And_MultipleErrors_Should_Implicitly_Convert_To_Generic_Failure(
+        bool useList,
+        Error[] errors,
+        int expectedCount)
     {
         // Arrange
-        List<Error> errors = [ResultStub.NotFoundError()];
+        List<Error> list = [.. errors];
 
         // Act
-        Result<int> result = errors;
-
-        // Assert
-        result.IsFailure.ShouldBeTrue();
-        result.Errors.ShouldBe(errors);
-        result.StatusCode.ShouldBe(ResultConstant.StatusCode.NotFound);
-    }
-
-    /// <summary>Multiple errors should be preserved by implicit conversion.</summary>
-    [Fact]
-    public void MultipleErrors_Should_Be_Preserved_By_Implicit_Conversion()
-    {
-        // Arrange
-        var errors = new[]
+        Result<int> result;
+        if (useList)
         {
-            ResultStub.NotFoundError(),
-            Error.NotFound("test.other", "Another missing resource")
-        };
-
-        // Act
-        Result<int> result = errors;
+            result = list;
+        }
+        else
+        {
+            result = errors;
+        }
 
         // Assert
         result.IsFailure.ShouldBeTrue();
-        result.Errors.Count.ShouldBe(2);
+        result.Errors.Count.ShouldBe(expectedCount);
         result.Errors.ShouldBe(errors);
         result.StatusCode.ShouldBe(ResultConstant.StatusCode.NotFound);
+    }
+
+    public static TheoryData<bool, Error[], int> IntErrorCollectionCases()
+    {
+        var data = new TheoryData<bool, Error[], int>();
+        data.Add(true, [ResultStub.NotFoundError()], 1);
+        data.Add(
+            false,
+            [ResultStub.NotFoundError(), Error.NotFound("test.other", "Another missing resource")],
+            2);
+        return data;
     }
 
     #endregion
 
     #region Failure Conversion Guards
 
-    /// <summary>An empty error array should throw when converted.</summary>
-    [Fact]
-    public void EmptyErrorArray_Should_Throw_When_Converted()
+    /// <summary>Invalid error collections should throw when converted.</summary>
+    [Theory]
+    [InlineData("empty-array")]
+    [InlineData("empty-list")]
+    [InlineData("mixed-array")]
+    public void Invalid_Error_Collections_Should_Throw_When_Converted(string collectionKind)
     {
         // Arrange
-        Error[] errors = [];
+        Error[] array = [];
+        if (collectionKind == "mixed-array")
+        {
+            array = [ResultStub.NotFoundError(), ResultStub.ConflictError()];
+        }
+
+        List<Error> list = [];
 
         // Act
         Action act = () =>
         {
-            Result<int> result = errors;
-            _ = result.StatusCode;
-        };
-
-        // Assert
-        Should.Throw<ArgumentException>(act);
-    }
-
-    /// <summary>An empty error list should throw when converted.</summary>
-    [Fact]
-    public void EmptyErrorList_Should_Throw_When_Converted()
-    {
-        // Arrange
-        List<Error> errors = [];
-
-        // Act
-        Action act = () =>
-        {
-            Result<int> result = errors;
-            _ = result.StatusCode;
+            if (collectionKind == "empty-list")
+            {
+                Result<int> result = list;
+                _ = result.StatusCode;
+            }
+            else
+            {
+                Result<int> result = array;
+                _ = result.StatusCode;
+            }
         };
 
         // Assert
@@ -185,24 +205,6 @@ public class ResultGenericImplicitSpec
         // Assert
         var ex = Should.Throw<ArgumentNullException>(act);
         ex.ParamName.ShouldBe("errors");
-    }
-
-    /// <summary>Mixed status codes in an error array should throw when converted.</summary>
-    [Fact]
-    public void MixedStatusErrors_Should_Throw_When_Converted()
-    {
-        // Arrange
-        var errors = new[] { ResultStub.NotFoundError(), ResultStub.ConflictError() };
-
-        // Act
-        Action act = () =>
-        {
-            Result<int> result = errors;
-            _ = result.StatusCode;
-        };
-
-        // Assert
-        Should.Throw<ArgumentException>(act);
     }
 
     #endregion

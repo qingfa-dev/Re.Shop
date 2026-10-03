@@ -10,13 +10,24 @@ public class ResultGenericFactorySpec
     #region Success
 
     /// <summary>Success factories should use their standard status.</summary>
-    [Fact]
-    public void Success_Factories_Should_Use_Their_Standard_Status()
+    [Theory]
+    [InlineData(ResultConstant.StatusCode.Ok, 0)]
+    [InlineData(ResultConstant.StatusCode.Created, 1)]
+    [InlineData(ResultConstant.StatusCode.Accepted, 2)]
+    public void Success_Factories_Should_Use_Their_Standard_Status(int expected, int factory)
     {
-        // Act & Assert
-        Result<int>.Ok(1).StatusCode.ShouldBe(ResultConstant.StatusCode.Ok);
-        Result<int>.Created(2).StatusCode.ShouldBe(ResultConstant.StatusCode.Created);
-        Result<int>.Accepted(3).StatusCode.ShouldBe(ResultConstant.StatusCode.Accepted);
+        // Act
+        var result = factory switch
+        {
+            0 => Result<int>.Ok(1),
+            1 => Result<int>.Created(2),
+            2 => Result<int>.Accepted(3),
+            _ => throw new ArgumentOutOfRangeException(nameof(factory)),
+        };
+
+        // Assert
+        result.IsSuccess.ShouldBeTrue();
+        result.StatusCode.ShouldBe(expected);
     }
 
     /// <summary>Success with explicit status should use the provided status.</summary>
@@ -61,36 +72,24 @@ public class ResultGenericFactorySpec
         result.StatusCode.ShouldBe(ResultConstant.StatusCode.InternalServerError);
     }
 
-    /// <summary>Success factory should reject failure status code.</summary>
-    [Fact]
-    public void Success_Factory_Should_Reject_Failure_Status_Code()
+    /// <summary>Factory validation should reject invalid input.</summary>
+    [Theory]
+    [InlineData("success-with-failure-status")]
+    [InlineData("failure-with-success-status")]
+    [InlineData("failure-with-empty-errors")]
+    public void Factory_Validation_Should_Reject_Invalid_Input(string scenario)
     {
         // Act
-        var act = () => Result<int>.Success(1, ResultConstant.StatusCode.NotFound);
-
-        // Assert
-        Should.Throw<ArgumentException>(act);
-    }
-
-    /// <summary>Failure factory should reject success status code.</summary>
-    [Fact]
-    public void Failure_Factory_Should_Reject_Success_Status_Code()
-    {
-        // Act
-        var act = () => Result<int>.Fail(
-            new[] { ResultStub.NotFoundError() },
-            ResultConstant.StatusCode.Ok);
-
-        // Assert
-        Should.Throw<ArgumentException>(act);
-    }
-
-    /// <summary>Failure factory should reject empty error list.</summary>
-    [Fact]
-    public void Failure_Factory_Should_Reject_Empty_Error_List()
-    {
-        // Act
-        var act = () => Result.Fail(Array.Empty<Error>());
+        Action act = scenario switch
+        {
+            "success-with-failure-status"
+                => () => { _ = Result<int>.Success(1, ResultConstant.StatusCode.NotFound); },
+            "failure-with-success-status"
+                => () => { _ = Result<int>.Fail(new[] { ResultStub.NotFoundError() }, ResultConstant.StatusCode.Ok); },
+            "failure-with-empty-errors"
+                => () => { _ = Result.Fail(Array.Empty<Error>()); },
+            _ => throw new ArgumentOutOfRangeException(nameof(scenario)),
+        };
 
         // Assert
         Should.Throw<ArgumentException>(act);

@@ -29,17 +29,20 @@ public class ResultInterfaceSpec
     #region Generic
 
     /// <summary>Generic Result should implement IResult and IResult of value.</summary>
-    [Fact]
-    public void Generic_Result_Should_Implement_IResult_And_IResultOfValue()
+    [Theory]
+    [InlineData(42)]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void Generic_Result_Should_Implement_IResult_And_IResultOfValue(int expectedValue)
     {
         // Arrange
-        IResult<int, Error> result = Result<int>.Ok(42);
+        IResult<int, Error> result = Result<int>.Ok(expectedValue);
 
         // Act & Assert
         result.IsSuccess.ShouldBeTrue();
-        result.Value.ShouldBe(42);
+        result.Value.ShouldBe(expectedValue);
         result.TryGetValue(out var value).ShouldBeTrue();
-        value.ShouldBe(42);
+        value.ShouldBe(expectedValue);
     }
 
     /// <summary>Generic failure should expose failed state through IResult contract.</summary>

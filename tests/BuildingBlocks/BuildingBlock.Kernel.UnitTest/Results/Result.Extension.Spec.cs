@@ -9,32 +9,39 @@ public class ResultExtensionSpec
     #region Metadata and Status
 
     /// <summary>Non-generic metadata and status extensions should return copies.</summary>
-    [Fact]
-    public void NonGeneric_Metadata_And_Status_Extensions_Should_Return_Copies()
+    [Theory]
+    [InlineData("original", "updated")]
+    [InlineData("first", "second")]
+    public void NonGeneric_Metadata_And_Status_Extensions_Should_Return_Copies(
+        string originalValue,
+        string updatedValue)
     {
         // Arrange
         var original = Result.Ok()
-            .WithMetadata("source", "original");
+            .WithMetadata("source", originalValue);
 
         // Act
         var copy = original
-            .WithMetadata("source", "updated")
+            .WithMetadata("source", updatedValue)
             .WithStatus(ResultConstant.StatusCode.Accepted);
 
         // Assert
         copy.ShouldNotBeSameAs(original);
-        copy.Metadata["source"].ShouldBe("updated");
+        copy.Metadata["source"].ShouldBe(updatedValue);
         copy.StatusCode.ShouldBe(ResultConstant.StatusCode.Accepted);
-        original.Metadata["source"].ShouldBe("original");
+        original.Metadata["source"].ShouldBe(originalValue);
         original.StatusCode.ShouldBe(ResultConstant.StatusCode.Ok);
     }
 
     /// <summary>Generic metadata and status extensions should return copies.</summary>
-    [Fact]
-    public void Generic_Metadata_And_Status_Extensions_Should_Return_Copies()
+    [Theory]
+    [InlineData(5)]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void Generic_Metadata_And_Status_Extensions_Should_Return_Copies(int value)
     {
         // Arrange
-        var original = Result<int>.Ok(5)
+        var original = Result<int>.Ok(value)
             .WithMetadata("source", "original");
 
         // Act
@@ -46,7 +53,7 @@ public class ResultExtensionSpec
         copy.ShouldNotBeSameAs(original);
         copy.Metadata["source"].ShouldBe("updated");
         copy.StatusCode.ShouldBe(ResultConstant.StatusCode.Accepted);
-        copy.Value.ShouldBe(5);
+        copy.Value.ShouldBe(value);
         original.Metadata["source"].ShouldBe("original");
         original.StatusCode.ShouldBe(ResultConstant.StatusCode.Ok);
     }

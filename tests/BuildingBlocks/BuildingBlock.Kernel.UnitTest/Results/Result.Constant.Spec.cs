@@ -9,18 +9,19 @@ public class ResultConstantSpec
     #region Constraints
 
     /// <summary>Constraints should expose status and collection limits.</summary>
-    [Fact]
-    public void Constraints_Should_Expose_Status_And_Collection_Limits()
+    [Theory]
+    [InlineData("Constraint.Status.Min", ResultConstant.Constraint.Status.Min, 100)]
+    [InlineData("Constraint.Status.Max", ResultConstant.Constraint.Status.Max, 599)]
+    [InlineData("Constraint.Status.Success.Min", ResultConstant.Constraint.Status.Success.Min, 200)]
+    [InlineData("Constraint.Status.Success.Max", ResultConstant.Constraint.Status.Success.Max, 299)]
+    [InlineData("Constraint.Status.Failure.Min", ResultConstant.Constraint.Status.Failure.Min, 400)]
+    [InlineData("Constraint.Status.Failure.Max", ResultConstant.Constraint.Status.Failure.Max, 599)]
+    [InlineData("Constraint.Errors.MaxCount", ResultConstant.Constraint.Errors.MaxCount, 50)]
+    [InlineData("Constraint.Metadata.MaxEntries", ResultConstant.Constraint.Metadata.MaxEntries, 50)]
+    public void Constraints_Should_Expose_Status_And_Collection_Limits(string name, int actual, int expected)
     {
         // Act & Assert
-        ResultConstant.Constraint.Status.Min.ShouldBe(100);
-        ResultConstant.Constraint.Status.Max.ShouldBe(599);
-        ResultConstant.Constraint.Status.Success.Min.ShouldBe(200);
-        ResultConstant.Constraint.Status.Success.Max.ShouldBe(299);
-        ResultConstant.Constraint.Status.Failure.Min.ShouldBe(400);
-        ResultConstant.Constraint.Status.Failure.Max.ShouldBe(599);
-        ResultConstant.Constraint.Errors.MaxCount.ShouldBe(50);
-        ResultConstant.Constraint.Metadata.MaxEntries.ShouldBe(50);
+        actual.ShouldBe(expected, name);
     }
 
     #endregion
@@ -28,16 +29,17 @@ public class ResultConstantSpec
     #region Status Codes
 
     /// <summary>Status codes should match their HTTP values.</summary>
-    [Fact]
-    public void Status_Codes_Should_Match_Their_Http_Values()
+    [Theory]
+    [InlineData(ResultConstant.StatusCode.Ok, 200)]
+    [InlineData(ResultConstant.StatusCode.Created, 201)]
+    [InlineData(ResultConstant.StatusCode.Accepted, 202)]
+    [InlineData(ResultConstant.StatusCode.NoContent, 204)]
+    [InlineData(ResultConstant.StatusCode.NotFound, 404)]
+    [InlineData(ResultConstant.StatusCode.InternalServerError, 500)]
+    public void Status_Codes_Should_Match_Their_Http_Values(int actual, int expected)
     {
         // Act & Assert
-        ResultConstant.StatusCode.Ok.ShouldBe(200);
-        ResultConstant.StatusCode.Created.ShouldBe(201);
-        ResultConstant.StatusCode.Accepted.ShouldBe(202);
-        ResultConstant.StatusCode.NoContent.ShouldBe(204);
-        ResultConstant.StatusCode.NotFound.ShouldBe(404);
-        ResultConstant.StatusCode.InternalServerError.ShouldBe(500);
+        actual.ShouldBe(expected);
     }
 
     #endregion

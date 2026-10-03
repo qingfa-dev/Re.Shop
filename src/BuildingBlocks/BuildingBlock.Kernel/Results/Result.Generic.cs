@@ -38,6 +38,7 @@ public partial record Result<TValue>
             errors: errors ?? ResultConstant.Default.EmptyErrors,
             statusCode: statusCode)
     {
+        // Guard: Validate value presence based on success state.
         var valueError = ResultGuard.ValidateValue(isSuccess, value);
         if (valueError is not null)
             throw new ArgumentException(valueError.ToString(), nameof(value));
@@ -67,6 +68,7 @@ public partial record Result<TValue>
         MetadataDictionary? metadata = null)
     {
         var resolvedIsSuccess = isSuccess ?? IsSuccess;
+        // Guard: Transitioning failure to success requires a value.
         if (resolvedIsSuccess && !IsSuccess)
         {
             throw new ArgumentException(
@@ -74,9 +76,11 @@ public partial record Result<TValue>
                 nameof(isSuccess));
         }
 
+        // Compute: Clone errors when provided; copy existing otherwise.
         var resolvedErrors = (errors ?? Errors).ToList();
         var statusWasChanged = isSuccess.HasValue && isSuccess.Value != IsSuccess;
         var errorsWereChanged = errors is not null;
+        // Compute: Resolve status code: explicit > status/error change > current.
         var resolvedStatusCode = statusCode
             ?? (statusWasChanged || (errorsWereChanged && !resolvedIsSuccess)
                 ? Result.ResolveStatus(resolvedErrors)
@@ -111,6 +115,7 @@ public partial record Result<TValue>
         MetadataDictionary? metadata = null)
     {
         var resolvedIsSuccess = isSuccess ?? IsSuccess;
+        // Compute: Clone errors when provided; clear on success transition; copy existing otherwise.
         var resolvedErrors = errors is not null
             ? errors.ToList()
             : resolvedIsSuccess && !IsSuccess
@@ -118,6 +123,7 @@ public partial record Result<TValue>
                 : [.. Errors];
         var statusWasChanged = isSuccess.HasValue && isSuccess.Value != IsSuccess;
         var errorsWereChanged = errors is not null;
+        // Compute: Resolve status code: explicit > status change > error-driven > current.
         var resolvedStatusCode = statusCode
             ?? (statusWasChanged
                 ? resolvedIsSuccess

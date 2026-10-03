@@ -81,6 +81,7 @@ public partial record Result<TValue>
     {
         ArgumentNullException.ThrowIfNull(errors);
 
+        // Compute: Materialize errors and resolve status code from errors when omitted.
         var errorList = errors.ToList();
         var resolvedStatusCode = statusCode ?? Result.ResolveStatus(errorList);
 

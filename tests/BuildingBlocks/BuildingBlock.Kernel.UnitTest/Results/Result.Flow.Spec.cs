@@ -104,16 +104,19 @@ public class ResultFlowSpec
     }
 
     /// <summary>Non-generic Match should choose callback by state.</summary>
-    [Fact]
-    public void NonGeneric_Match_Should_Choose_Callback_By_State()
+    [Theory]
+    [InlineData(true, "ok")]
+    [InlineData(false, "test.not_found")]
+    public void NonGeneric_Match_Should_Choose_Callback_By_State(bool succeed, string expected)
     {
         // Arrange
-        var success = Result.Ok();
-        var failure = Result.Fail(ResultStub.NotFoundError());
+        var result = succeed ? Result.Ok() : Result.Fail(ResultStub.NotFoundError());
 
-        // Act & Assert
-        success.Match(() => "ok", _ => "failed").ShouldBe("ok");
-        failure.Match(() => "ok", errors => errors[0].Code).ShouldBe("test.not_found");
+        // Act
+        var message = result.Match(() => "ok", errors => errors[0].Code);
+
+        // Assert
+        message.ShouldBe(expected);
     }
 
     /// <summary>Non-generic Match should allow omitted callbacks and still reject null result.</summary>
@@ -158,16 +161,24 @@ public class ResultFlowSpec
 
     #region Map
 
-    /// <summary>Map should return flow failure when the active mapper is missing.</summary>
-    [Fact]
-    public void Map_Should_Return_Flow_Failure_When_The_Active_Mapper_Is_Missing()
+    /// <summary>Map and MapAsync should return the callback-missing flow error when the mapper is missing.</summary>
+    [Theory]
+    [InlineData("map.generic")]
+    [InlineData("map.nongeneric")]
+    [InlineData("mapasync.generic")]
+    public async Task Map_And_MapAsync_With_Null_Mapper_Should_Return_Flow_Error(string scenario)
     {
-        // Arrange
-        var result = Result<int>.Ok(1).Map<int, int>(mapper: null);
+        // Act
+        Result<int> result = scenario switch
+        {
+            "map.generic" => Result<int>.Ok(1).Map<int, int>(mapper: null),
+            "map.nongeneric" => Result.Ok().Map<int>(mapper: null),
+            _ => await Result<int>.Ok(1).MapAsync<int, int>(mapper: null),
+        };
 
-        // Act & Assert
-        result.IsFailure.ShouldBeTrue();
-        result.Errors[0].Code.ShouldBe(ResultConstant.Failure.Flow.CallbackMissing.Code);
+        // Assert
+        result.IsFailure.ShouldBeTrue(scenario);
+        result.Errors[0].Code.ShouldBe(ResultConstant.Failure.Flow.CallbackMissing.Code, scenario);
     }
 
     /// <summary>Generic Map when failure should propagate without invoking mapper.</summary>
@@ -189,30 +200,6 @@ public class ResultFlowSpec
         mapperCalled.ShouldBeFalse();
         mapped.IsFailure.ShouldBeTrue();
         mapped.StatusCode.ShouldBe(failure.StatusCode);
-    }
-
-    /// <summary>Non-generic Map with null mapper should return flow error.</summary>
-    [Fact]
-    public void NonGeneric_Map_With_Null_Mapper_Should_Return_Flow_Error()
-    {
-        // Act
-        var result = Result.Ok().Map<int>(mapper: null);
-
-        // Assert
-        result.IsFailure.ShouldBeTrue();
-        result.Errors[0].Code.ShouldBe(ResultConstant.Failure.Flow.CallbackMissing.Code);
-    }
-
-    /// <summary>Generic MapAsync with null mapper should return flow error.</summary>
-    [Fact]
-    public async Task Generic_MapAsync_With_Null_Mapper_Should_Return_Flow_Error()
-    {
-        // Act
-        var result = await Result<int>.Ok(1).MapAsync<int, int>(mapper: null);
-
-        // Assert
-        result.IsFailure.ShouldBeTrue();
-        result.Errors[0].Code.ShouldBe(ResultConstant.Failure.Flow.CallbackMissing.Code);
     }
 
     /// <summary>Non-generic MapAsync should handle failure and null task.</summary>
@@ -248,53 +235,126 @@ public class ResultFlowSpec
 
     #region Bind
 
-    /// <summary>Bind and Ensure should return flow failures when active callbacks are missing.</summary>
-    [Fact]
-    public void Bind_And_Ensure_Should_Return_Flow_Failures_When_Active_Callbacks_Are_Missing()
+    /// <summary>Bind and Ensure should report the expected failure code when an active callback or result is missing.</summary>
+    [Theory]
+    [MemberData(nameof(Bind_And_Ensure_Failure_Cases))]
+    public async Task Bind_And_Ensure_Should_Report_Expected_Failure_Code(
+        string scenario,
+        Func<Task<Result>> act,
+        string expectedCode)
     {
-        // Arrange
-        var missingBinder = Result<int>.Ok(1)
-            .Bind<int, string>(binder: null);
-        var missingPredicate = Result<int>.Ok(1)
-            .Ensure(predicate: null, error: ResultStub.NotFoundError);
-
-        // Act & Assert
-        missingBinder.IsFailure.ShouldBeTrue();
-        missingBinder.Errors[0].Code.ShouldBe(ResultConstant.Failure.Flow.CallbackMissing.Code);
-        missingPredicate.IsFailure.ShouldBeTrue();
-        missingPredicate.Errors[0].Code.ShouldBe(ResultConstant.Failure.Flow.CallbackMissing.Code);
-    }
-
-    /// <summary>Ensure should accept a direct error or zero-argument error factory.</summary>
-    [Fact]
-    public void Ensure_Should_Accept_A_Direct_Error_Or_Zero_Argument_Error_Factory()
-    {
-        // Arrange & Act
-        var directError = Result<int>.Ok(0)
-            .Ensure(_ => false, errorValue: ResultStub.ConflictError());
-        var factoryError = Result<int>.Ok(0)
-            .Ensure(_ => false, error: ResultStub.NotFoundError);
+        // Act
+        var result = await act();
 
         // Assert
-        directError.Errors[0].Code.ShouldBe("test.conflict");
-        factoryError.Errors[0].Code.ShouldBe("test.not_found");
+        result.IsFailure.ShouldBeTrue(scenario);
+        result.Errors[0].Code.ShouldBe(expectedCode, scenario);
     }
 
-    /// <summary>Ensure should return flow error when the error factory returns null.</summary>
-    [Fact]
-    public void Ensure_Should_Return_Flow_Error_When_The_Error_Factory_Returns_Null()
+    public static TheoryData<string, Func<Task<Result>>, string> Bind_And_Ensure_Failure_Cases()
     {
-        // Arrange
-        var result = Result<int>.Ok(0)
-            .Ensure(_ => false, error: (Func<Error>)(() => null!));
-        var missingError = Result<int>.Ok(0)
-            .Ensure(_ => false, errorValue: null);
+        var data = new TheoryData<string, Func<Task<Result>>, string>();
 
-        // Act & Assert
-        result.IsFailure.ShouldBeTrue();
-        result.Errors[0].Code.ShouldBe(ResultConstant.Failure.Flow.ErrorMissing.Code);
-        missingError.IsFailure.ShouldBeTrue();
-        missingError.Errors[0].Code.ShouldBe(ResultConstant.Failure.Flow.CallbackMissing.Code);
+        data.Add(
+            "bind.missing_binder.generic",
+            static () => Task.FromResult<Result>(Result<int>.Ok(1).Bind<int, string>(binder: null)),
+            ResultConstant.Failure.Flow.CallbackMissing.Code);
+        data.Add(
+            "ensure.missing_predicate",
+            static () => Task.FromResult<Result>(Result<int>.Ok(1).Ensure(predicate: null, error: ResultStub.NotFoundError)),
+            ResultConstant.Failure.Flow.CallbackMissing.Code);
+        data.Add(
+            "bind.null_binder.nongeneric",
+            static () => Task.FromResult<Result>(Result<int>.Ok(1).Bind((Func<int, Result>?)null)),
+            ResultConstant.Failure.Flow.CallbackMissing.Code);
+        data.Add(
+            "bind.null_result.nongeneric",
+            static () => Task.FromResult<Result>(Result<int>.Ok(1).Bind((Func<int, Result>)(_ => null!))),
+            ResultConstant.Failure.Flow.ResultMissing.Code);
+        data.Add(
+            "bind.null_result.generic",
+            static () => Task.FromResult<Result>(Result<int>.Ok(1).Bind((Func<int, Result<string>>)(_ => null!))),
+            ResultConstant.Failure.Flow.ResultMissing.Code);
+        data.Add(
+            "ensure.error_factory_returns_null",
+            static () => Task.FromResult<Result>(Result<int>.Ok(0).Ensure(_ => false, error: (Func<Error>)(() => null!))),
+            ResultConstant.Failure.Flow.ErrorMissing.Code);
+        data.Add(
+            "ensure.missing_error_value",
+            static () => Task.FromResult<Result>(Result<int>.Ok(0).Ensure(_ => false, errorValue: null)),
+            ResultConstant.Failure.Flow.CallbackMissing.Code);
+        data.Add(
+            "ensure.on_violation_returns_null",
+            static () => Task.FromResult<Result>(Result<int>.Ok(1).Ensure(value => false, _ => null!)),
+            ResultConstant.Failure.Flow.ErrorMissing.Code);
+        data.Add(
+            "ensure.missing_error_factory",
+            static () => Task.FromResult<Result>(Result<int>.Ok(0).Ensure(_ => false, error: (Func<Error>?)null)),
+            ResultConstant.Failure.Flow.CallbackMissing.Code);
+        data.Add(
+            "ensureasync.missing_error_func",
+            static async () => await Result<int>.Ok(1)
+                .EnsureAsync((_, _) => Task.FromResult(false), error: (Func<Error>?)null),
+            ResultConstant.Failure.Flow.CallbackMissing.Code);
+        data.Add(
+            "ensureasync.error_func_returns_null",
+            static async () => await Result<int>.Ok(1)
+                .EnsureAsync((_, _) => Task.FromResult(false), error: (Func<Error>)(() => null!)),
+            ResultConstant.Failure.Flow.ErrorMissing.Code);
+        data.Add(
+            "ensureasync.missing_sync_violation",
+            static async () => await Result<int>.Ok(1)
+                .EnsureAsync((_, _) => Task.FromResult(false), onViolation: (Func<int, Error>?)null),
+            ResultConstant.Failure.Flow.CallbackMissing.Code);
+        data.Add(
+            "ensureasync.null_async_task",
+            static async () => await Result<int>.Ok(1)
+                .EnsureAsync((_, _) => Task.FromResult(false), onViolation: (_, _) => null!),
+            ResultConstant.Failure.Flow.ResultMissing.Code);
+        data.Add(
+            "ensureasync.null_async_result",
+            static async () => await Result<int>.Ok(1)
+                .EnsureAsync((_, _) => Task.FromResult(false), onViolation: (_, _) => Task.FromResult<Error>(null!)),
+            ResultConstant.Failure.Flow.ErrorMissing.Code);
+
+        return data;
+    }
+
+    /// <summary>Ensure should apply the requested error (direct value, sync factory, or async factory) on violation.</summary>
+    [Theory]
+    [MemberData(nameof(Ensure_Violation_Error_Cases))]
+    public async Task Ensure_Should_Apply_The_Requested_Error_On_Violation(
+        string scenario,
+        Func<Task<Result>> act,
+        string expectedCode)
+    {
+        // Act
+        var result = await act();
+
+        // Assert
+        result.IsFailure.ShouldBeTrue(scenario);
+        result.Errors[0].Code.ShouldBe(expectedCode, scenario);
+    }
+
+    public static TheoryData<string, Func<Task<Result>>, string> Ensure_Violation_Error_Cases()
+    {
+        var data = new TheoryData<string, Func<Task<Result>>, string>();
+
+        data.Add(
+            "ensure.error_value",
+            static () => Task.FromResult<Result>(Result<int>.Ok(0).Ensure(_ => false, errorValue: ResultStub.ConflictError())),
+            "test.conflict");
+        data.Add(
+            "ensure.error_factory",
+            static () => Task.FromResult<Result>(Result<int>.Ok(0).Ensure(_ => false, error: ResultStub.NotFoundError)),
+            "test.not_found");
+        data.Add(
+            "ensureasync.error_value",
+            static async () => await Result<int>.Ok(1)
+                .EnsureAsync((_, _) => Task.FromResult(false), ResultStub.NotFoundError()),
+            "test.not_found");
+
+        return data;
     }
 
     /// <summary>Ensure when predicate violated should fail with violation error.</summary>
@@ -311,49 +371,6 @@ public class ResultFlowSpec
         result.IsFailure.ShouldBeTrue();
         result.Errors[0].Code.ShouldBe("test.conflict");
         result.StatusCode.ShouldBe(ResultConstant.StatusCode.Conflict);
-    }
-
-    /// <summary>Ensure when onViolation returns null should return flow error.</summary>
-    [Fact]
-    public void Ensure_When_OnViolation_Returns_Null_Should_Return_Flow_Error()
-    {
-        // Arrange
-        var success = Result<int>.Ok(1);
-
-        // Act
-        var act = () => success.Ensure(value => false, _ => null!);
-
-        // Assert
-        var result = act();
-        result.IsFailure.ShouldBeTrue();
-        result.Errors[0].Code.ShouldBe(ResultConstant.Failure.Flow.ErrorMissing.Code);
-    }
-
-    /// <summary>Bind with null binder or null result should return flow errors.</summary>
-    [Fact]
-    public void Bind_With_Null_Binder_Or_Null_Result_Should_Return_Flow_Errors()
-    {
-        // Arrange
-        var missingBinder = Result<int>.Ok(1).Bind((Func<int, Result>?)null);
-        var missingResult = Result<int>.Ok(1).Bind((Func<int, Result>)(_ => null!));
-        var missingGenericResult = Result<int>.Ok(1).Bind((Func<int, Result<string>>)(_ => null!));
-
-        // Act & Assert
-        missingBinder.Errors[0].Code.ShouldBe(ResultConstant.Failure.Flow.CallbackMissing.Code);
-        missingResult.Errors[0].Code.ShouldBe(ResultConstant.Failure.Flow.ResultMissing.Code);
-        missingGenericResult.Errors[0].Code.ShouldBe(ResultConstant.Failure.Flow.ResultMissing.Code);
-    }
-
-    /// <summary>Ensure with null factory func should return flow error.</summary>
-    [Fact]
-    public void Ensure_With_Null_Factory_Func_Should_Return_Flow_Error()
-    {
-        // Act
-        var result = Result<int>.Ok(0).Ensure(_ => false, error: (Func<Error>?)null);
-
-        // Assert
-        result.IsFailure.ShouldBeTrue();
-        result.Errors[0].Code.ShouldBe(ResultConstant.Failure.Flow.CallbackMissing.Code);
     }
 
     /// <summary>Ensure when failure should return original without invoking.</summary>
@@ -408,43 +425,6 @@ public class ResultFlowSpec
         failure.IsFailure.ShouldBeTrue();
         nullPredicateTask.Errors[0].Code.ShouldBe(ResultConstant.Failure.Flow.ResultMissing.Code);
         missingErrorValue.Errors[0].Code.ShouldBe(ResultConstant.Failure.Flow.CallbackMissing.Code);
-    }
-
-    /// <summary>Ensure async with error value should apply error on violation.</summary>
-    [Fact]
-    public async Task EnsureAsync_With_ErrorValue_Should_Apply_Error_On_Violation()
-    {
-        // Act
-        var violation = await Result<int>.Ok(1)
-            .EnsureAsync((_, _) => Task.FromResult(false), ResultStub.NotFoundError());
-
-        // Assert
-        violation.IsFailure.ShouldBeTrue();
-        violation.Errors[0].Code.ShouldBe("test.not_found");
-    }
-
-    /// <summary>Ensure async with factory func overloads should handle missing values.</summary>
-    [Fact]
-    public async Task EnsureAsync_With_Factory_Func_Overloads_Should_Handle_Missing_Values()
-    {
-        // Arrange
-        var missingFunc = await Result<int>.Ok(1)
-            .EnsureAsync((_, _) => Task.FromResult(false), error: (Func<Error>?)null);
-        var nullErrorResult = await Result<int>.Ok(1)
-            .EnsureAsync((_, _) => Task.FromResult(false), error: (Func<Error>)(() => null!));
-        var missingSyncViolation = await Result<int>.Ok(1)
-            .EnsureAsync((_, _) => Task.FromResult(false), onViolation: (Func<int, Error>?)null);
-        var nullAsyncTask = await Result<int>.Ok(1)
-            .EnsureAsync((_, _) => Task.FromResult(false), onViolation: (_, _) => null!);
-        var nullAsyncResult = await Result<int>.Ok(1)
-            .EnsureAsync((_, _) => Task.FromResult(false), onViolation: (_, _) => Task.FromResult<Error>(null!));
-
-        // Act & Assert
-        missingFunc.Errors[0].Code.ShouldBe(ResultConstant.Failure.Flow.CallbackMissing.Code);
-        nullErrorResult.Errors[0].Code.ShouldBe(ResultConstant.Failure.Flow.ErrorMissing.Code);
-        missingSyncViolation.Errors[0].Code.ShouldBe(ResultConstant.Failure.Flow.CallbackMissing.Code);
-        nullAsyncTask.Errors[0].Code.ShouldBe(ResultConstant.Failure.Flow.ResultMissing.Code);
-        nullAsyncResult.Errors[0].Code.ShouldBe(ResultConstant.Failure.Flow.ErrorMissing.Code);
     }
 
     #endregion
@@ -657,67 +637,59 @@ public class ResultFlowSpec
         got.ShouldBe(2);
     }
 
-    /// <summary>Non-generic Tap should run handler only on success.</summary>
-    [Fact]
-    public void NonGeneric_Tap_Should_Run_Handler_Only_On_Success()
+    /// <summary>Tap and TapError should run the active handler exactly once for the selected state branch.</summary>
+    [Theory]
+    [MemberData(nameof(Tap_And_TapError_Active_Handler_Cases))]
+    public void Tap_And_TapError_Should_Run_The_Active_Handler_Exactly_Once(string scenario, Func<int> act)
     {
-        // Arrange
-        var count = 0;
-
         // Act
-        Result.Ok().Tap(() => count++);
-        Result.Ok().Tap(null);
-        Result.Fail(ResultStub.NotFoundError()).Tap(() => count++);
+        var count = act();
 
         // Assert
-        count.ShouldBe(1);
+        count.ShouldBe(1, scenario);
     }
 
-    /// <summary>Generic Tap on failure should not invoke handler.</summary>
-    [Fact]
-    public void Generic_Tap_On_Failure_Should_Not_Invoke_Handler()
+    public static TheoryData<string, Func<int>> Tap_And_TapError_Active_Handler_Cases()
     {
-        // Arrange
-        var count = 0;
+        var data = new TheoryData<string, Func<int>>();
 
-        // Act
-        Result<int>.Fail(ResultStub.NotFoundError()).Tap<int>(_ => count++);
-        Result<int>.Ok(1).Tap<int>(_ => count++);
+        data.Add("nongeneric.tap", static () =>
+        {
+            var count = 0;
+            Result.Ok().Tap(() => count++);
+            Result.Ok().Tap(null);
+            Result.Fail(ResultStub.NotFoundError()).Tap(() => count++);
 
-        // Assert
-        count.ShouldBe(1);
-    }
+            return count;
+        });
+        data.Add("generic.tap", static () =>
+        {
+            var count = 0;
+            Result<int>.Fail(ResultStub.NotFoundError()).Tap<int>(_ => count++);
+            Result<int>.Ok(1).Tap<int>(_ => count++);
 
-    /// <summary>Non-generic TapError should run handler only on failure.</summary>
-    [Fact]
-    public void NonGeneric_TapError_Should_Run_Handler_Only_On_Failure()
-    {
-        // Arrange
-        var count = 0;
+            return count;
+        });
+        data.Add("nongeneric.taperror", static () =>
+        {
+            var count = 0;
+            Result.Fail(ResultStub.NotFoundError()).TapError(_ => count++);
+            Result.Fail(ResultStub.NotFoundError()).TapError(null);
+            Result.Ok().TapError(_ => count++);
 
-        // Act
-        Result.Fail(ResultStub.NotFoundError()).TapError(_ => count++);
-        Result.Fail(ResultStub.NotFoundError()).TapError(null);
-        Result.Ok().TapError(_ => count++);
+            return count;
+        });
+        data.Add("generic.taperror", static () =>
+        {
+            var count = 0;
+            Result<int>.Fail(ResultStub.NotFoundError()).TapError<int>(null);
+            Result<int>.Ok(1).TapError<int>(null);
+            Result<int>.Fail(ResultStub.NotFoundError()).TapError<int>(_ => count++);
 
-        // Assert
-        count.ShouldBe(1);
-    }
+            return count;
+        });
 
-    /// <summary>Generic TapError with null handler should no-op.</summary>
-    [Fact]
-    public void Generic_TapError_With_Null_Handler_Should_No_Op()
-    {
-        // Arrange
-        var count = 0;
-
-        // Act
-        Result<int>.Fail(ResultStub.NotFoundError()).TapError<int>(null);
-        Result<int>.Ok(1).TapError<int>(null);
-        Result<int>.Fail(ResultStub.NotFoundError()).TapError<int>(_ => count++);
-
-        // Assert
-        count.ShouldBe(1);
+        return data;
     }
 
     /// <summary>Non-generic SwitchAsync should handle all handler combinations.</summary>
@@ -774,50 +746,110 @@ public class ResultFlowSpec
 
     #region Tap
 
-    /// <summary>Non-generic TapAsync should handle success, failure, and null task.</summary>
-    [Fact]
-    public async Task NonGeneric_TapAsync_Should_Handle_Success_Failure_And_Null_Task()
+    /// <summary>Non-generic TapAsync and TapErrorAsync should run the active handler once and report a null task.</summary>
+    [Theory]
+    [MemberData(nameof(NonGeneric_TapAsync_And_TapErrorAsync_Cases))]
+    public async Task NonGeneric_TapAsync_And_TapErrorAsync_Should_Handle_Success_Failure_And_Null_Task(
+        string scenario,
+        Func<Task<(int Count, Result NullTask)>> act)
     {
-        // Arrange
-        var count = 0;
-
         // Act
-        await Result.Ok().TapAsync(
-            (_) =>
+        var (count, nullTask) = await act();
+
+        // Assert
+        count.ShouldBe(1, scenario);
+        nullTask.Errors[0].Code.ShouldBe(ResultConstant.Failure.Flow.ResultMissing.Code, scenario);
+    }
+
+    public static TheoryData<string, Func<Task<(int Count, Result NullTask)>>> NonGeneric_TapAsync_And_TapErrorAsync_Cases()
+    {
+        var data = new TheoryData<string, Func<Task<(int Count, Result NullTask)>>>();
+
+        data.Add("tapasync", static async () =>
+        {
+            var count = 0;
+            await Result.Ok().TapAsync(
+                (_) =>
+                {
+                    count++;
+                    return Task.CompletedTask;
+                });
+            await Result.Ok().TapAsync(null);
+            var nullTask = await Result.Ok().TapAsync((_) => null!);
+            await Result.Fail(ResultStub.NotFoundError()).TapAsync(_ =>
             {
                 count++;
                 return Task.CompletedTask;
             });
-        await Result.Ok().TapAsync(null);
-        var nullTask = await Result.Ok().TapAsync((_) => null!);
-        await Result.Fail(ResultStub.NotFoundError()).TapAsync(_ =>
+
+            return (count, nullTask);
+        });
+        data.Add("taperrorasync", static async () =>
         {
-            count++;
-            return Task.CompletedTask;
+            var count = 0;
+            await Result.Fail(ResultStub.NotFoundError()).TapErrorAsync((_, _) =>
+            {
+                count++;
+                return Task.CompletedTask;
+            });
+            await Result.Fail(ResultStub.NotFoundError()).TapErrorAsync(null);
+            var nullTask = await Result.Fail(ResultStub.NotFoundError()).TapErrorAsync((_, _) => null!);
+            await Result.Ok().TapErrorAsync((_, _) =>
+            {
+                count++;
+                return Task.CompletedTask;
+            });
+
+            return (count, nullTask);
         });
 
-        // Assert
-        count.ShouldBe(1);
-        nullTask.Errors[0].Code.ShouldBe(ResultConstant.Failure.Flow.ResultMissing.Code);
+        return data;
     }
 
-    /// <summary>Generic TapAsync with missing handler should no-op.</summary>
-    [Fact]
-    public async Task Generic_TapAsync_With_Missing_Handler_Should_No_Op()
+    /// <summary>Generic TapAsync and TapErrorAsync with a missing handler should no-op.</summary>
+    [Theory]
+    [MemberData(nameof(Generic_TapAsync_And_TapErrorAsync_Missing_Handler_Cases))]
+    public async Task Generic_TapAsync_And_TapErrorAsync_With_Missing_Handler_Should_No_Op(
+        string scenario,
+        Func<Task<int>> act)
     {
-        // Arrange
-        var count = 0;
-
         // Act
-        await Result<int>.Ok(1).TapAsync<int>(null);
-        await Result<int>.Fail(ResultStub.NotFoundError()).TapAsync<int>((_, _) =>
-        {
-            count++;
-            return Task.CompletedTask;
-        });
+        var count = await act();
 
         // Assert
-        count.ShouldBe(0);
+        count.ShouldBe(0, scenario);
+    }
+
+    public static TheoryData<string, Func<Task<int>>> Generic_TapAsync_And_TapErrorAsync_Missing_Handler_Cases()
+    {
+        var data = new TheoryData<string, Func<Task<int>>>();
+
+        data.Add("tapasync", static async () =>
+        {
+            var count = 0;
+            await Result<int>.Ok(1).TapAsync<int>(null);
+            await Result<int>.Fail(ResultStub.NotFoundError()).TapAsync<int>((_, _) =>
+            {
+                count++;
+                return Task.CompletedTask;
+            });
+
+            return count;
+        });
+        data.Add("taperrorasync", static async () =>
+        {
+            var count = 0;
+            await Result<int>.Fail(ResultStub.NotFoundError()).TapErrorAsync<int>(null);
+            await Result<int>.Ok(1).TapErrorAsync<int>((_, _) =>
+            {
+                count++;
+                return Task.CompletedTask;
+            });
+
+            return count;
+        });
+
+        return data;
     }
 
     /// <summary>Generic TapErrorAsync with null task should return flow error.</summary>
@@ -833,62 +865,25 @@ public class ResultFlowSpec
         result.Errors[0].Code.ShouldBe(ResultConstant.Failure.Flow.ResultMissing.Code);
     }
 
-    /// <summary>Non-generic TapErrorAsync should handle failure, success, and null task.</summary>
-    [Fact]
-    public async Task NonGeneric_TapErrorAsync_Should_Handle_Failure_Success_And_Null_Task()
-    {
-        // Arrange
-        var count = 0;
-
-        // Act
-        await Result.Fail(ResultStub.NotFoundError()).TapErrorAsync((_, _) =>
-        {
-            count++;
-            return Task.CompletedTask;
-        });
-        await Result.Fail(ResultStub.NotFoundError()).TapErrorAsync(null);
-        var nullTask = await Result.Fail(ResultStub.NotFoundError()).TapErrorAsync((_, _) => null!);
-        await Result.Ok().TapErrorAsync((_, _) =>
-        {
-            count++;
-            return Task.CompletedTask;
-        });
-
-        // Assert
-        count.ShouldBe(1);
-        nullTask.Errors[0].Code.ShouldBe(ResultConstant.Failure.Flow.ResultMissing.Code);
-    }
-
-    /// <summary>Generic TapErrorAsync with null handler should no-op.</summary>
-    [Fact]
-    public async Task Generic_TapErrorAsync_With_Null_Handler_Should_No_Op()
-    {
-        // Arrange
-        var count = 0;
-
-        // Act
-        await Result<int>.Fail(ResultStub.NotFoundError()).TapErrorAsync<int>(null);
-        await Result<int>.Ok(1).TapErrorAsync<int>((_, _) =>
-        {
-            count++;
-            return Task.CompletedTask;
-        });
-
-        // Assert
-        count.ShouldBe(0);
-    }
-
     /// <summary>Value access with null result should throw param exception.</summary>
-    [Fact]
-    public void Value_Access_With_Null_Result_Should_Throw_Param()
+    [Theory]
+    [InlineData("ValueOrThrow")]
+    [InlineData("ValueOr")]
+    public void Value_Access_With_Null_Result_Should_Throw_Param(string access)
     {
         // Act
-        Action valueOrThrow = () => _ = ((Result<int>)null!).ValueOrThrow();
-        Action valueOr = () => ((Result<int>)null!).ValueOr(-1);
+        Action valueAccess;
+        if (access == "ValueOrThrow")
+        {
+            valueAccess = () => _ = ((Result<int>)null!).ValueOrThrow();
+        }
+        else
+        {
+            valueAccess = () => ((Result<int>)null!).ValueOr(-1);
+        }
 
         // Assert
-        Should.Throw<ArgumentNullException>(valueOrThrow).ParamName.ShouldBe("result");
-        Should.Throw<ArgumentNullException>(valueOr).ParamName.ShouldBe("result");
+        Should.Throw<ArgumentNullException>(valueAccess).ParamName.ShouldBe("result", access);
     }
 
     /// <summary>ValueOrThrow when failure should throw with error text.</summary>
@@ -1048,20 +1043,21 @@ public class ResultFlowSpec
     }
 
     /// <summary>Async side effect should return flow error when callback returns null task.</summary>
-    [Fact]
-    public async Task Async_Side_Effect_Should_Return_Flow_Error_When_Callback_Returns_Null_Task()
+    [Theory]
+    [InlineData("tap")]
+    [InlineData("switch")]
+    public async Task Async_Side_Effect_Should_Return_Flow_Error_When_Callback_Returns_Null_Task(string scenario)
     {
         // Act
-        var tapped = await Result<int>.Ok(1)
-            .TapAsync((_, _) => null!);
-        var switched = await Result<int>.Ok(1)
-            .SwitchAsync((_, _) => null!);
+        Result<int> result = scenario switch
+        {
+            "tap" => await Result<int>.Ok(1).TapAsync((_, _) => null!),
+            _ => await Result<int>.Ok(1).SwitchAsync((_, _) => null!),
+        };
 
         // Assert
-        tapped.IsFailure.ShouldBeTrue();
-        tapped.Errors[0].Code.ShouldBe(ResultConstant.Failure.Flow.ResultMissing.Code);
-        switched.IsFailure.ShouldBeTrue();
-        switched.Errors[0].Code.ShouldBe(ResultConstant.Failure.Flow.ResultMissing.Code);
+        result.IsFailure.ShouldBeTrue(scenario);
+        result.Errors[0].Code.ShouldBe(ResultConstant.Failure.Flow.ResultMissing.Code, scenario);
     }
 
     /// <summary>Non-generic MatchAsync should handle all callback combinations.</summary>
@@ -1107,62 +1103,66 @@ public class ResultFlowSpec
         failureWithNullCallbacks.ShouldBeNull();
     }
 
-    /// <summary>Non-generic BindAsync should handle failure, missing binder, null task, and null result.</summary>
-    [Fact]
-    public async Task NonGeneric_BindAsync_Should_Handle_Failure_Missing_Binder_Null_Task_And_Null_Result()
+    /// <summary>BindAsync should handle failure, missing binder, null task, and null result for generic and non-generic binders.</summary>
+    [Theory]
+    [MemberData(nameof(BindAsync_Failure_Cases))]
+    public async Task BindAsync_Should_Handle_Failure_Missing_Binder_Null_Task_And_Null_Result(
+        string scenario,
+        Func<Task<(bool BinderRan, Result Failure, Result MissingBinder, Result MissingTask, Result MissingResult)>> act)
     {
-        // Arrange
-        var binderRan = false;
-
         // Act
-        var failure = await Result<int>.Fail(ResultStub.NotFoundError())
-            .BindAsync((_, _) =>
-            {
-                binderRan = true;
-                return Task.FromResult(Result.Ok());
-            });
-        var missingBinder = await Result<int>.Ok(1)
-            .BindAsync((Func<int, CancellationToken, Task<Result>>?)null);
-        var missingTask = await Result<int>.Ok(1)
-            .BindAsync((Func<int, CancellationToken, Task<Result>>)((_, _) => null!));
-        var missingResult = await Result<int>.Ok(1)
-            .BindAsync((_, _) => Task.FromResult((Result)null!));
+        var (binderRan, failure, missingBinder, missingTask, missingResult) = await act();
 
         // Assert
-        binderRan.ShouldBeFalse();
+        binderRan.ShouldBeFalse(scenario);
         failure.IsFailure.ShouldBeTrue();
-        missingBinder.Errors[0].Code.ShouldBe(ResultConstant.Failure.Flow.CallbackMissing.Code);
-        missingTask.Errors[0].Code.ShouldBe(ResultConstant.Failure.Flow.ResultMissing.Code);
-        missingResult.Errors[0].Code.ShouldBe(ResultConstant.Failure.Flow.ResultMissing.Code);
+        missingBinder.Errors[0].Code.ShouldBe(ResultConstant.Failure.Flow.CallbackMissing.Code, scenario);
+        missingTask.Errors[0].Code.ShouldBe(ResultConstant.Failure.Flow.ResultMissing.Code, scenario);
+        missingResult.Errors[0].Code.ShouldBe(ResultConstant.Failure.Flow.ResultMissing.Code, scenario);
     }
 
-    /// <summary>Generic BindAsync should handle failure, missing binder, null task, and null result.</summary>
-    [Fact]
-    public async Task Generic_BindAsync_Should_Handle_Failure_Missing_Binder_Null_Task_And_Null_Result()
+    public static TheoryData<string, Func<Task<(bool BinderRan, Result Failure, Result MissingBinder, Result MissingTask, Result MissingResult)>>> BindAsync_Failure_Cases()
     {
-        // Arrange
-        var binderRan = false;
+        var data = new TheoryData<string, Func<Task<(bool BinderRan, Result Failure, Result MissingBinder, Result MissingTask, Result MissingResult)>>>();
 
-        // Act
-        var failure = await Result<int>.Fail(ResultStub.NotFoundError())
-            .BindAsync((_, _) =>
-            {
-                binderRan = true;
-                return Task.FromResult(Result<string>.Ok("x"));
-            });
-        var missingBinder = await Result<int>.Ok(1)
-            .BindAsync((Func<int, CancellationToken, Task<Result<string>>>?)null);
-        var missingTask = await Result<int>.Ok(1)
-            .BindAsync((Func<int, CancellationToken, Task<Result<string>>>)((_, _) => null!));
-        var missingResult = await Result<int>.Ok(1)
-            .BindAsync((_, _) => Task.FromResult((Result<string>)null!));
+        data.Add("nongeneric", static async () =>
+        {
+            var binderRan = false;
+            var failure = await Result<int>.Fail(ResultStub.NotFoundError())
+                .BindAsync((_, _) =>
+                {
+                    binderRan = true;
+                    return Task.FromResult(Result.Ok());
+                });
+            var missingBinder = await Result<int>.Ok(1)
+                .BindAsync((Func<int, CancellationToken, Task<Result>>?)null);
+            var missingTask = await Result<int>.Ok(1)
+                .BindAsync((Func<int, CancellationToken, Task<Result>>)((_, _) => null!));
+            var missingResult = await Result<int>.Ok(1)
+                .BindAsync((_, _) => Task.FromResult((Result)null!));
 
-        // Assert
-        binderRan.ShouldBeFalse();
-        failure.IsFailure.ShouldBeTrue();
-        missingBinder.Errors[0].Code.ShouldBe(ResultConstant.Failure.Flow.CallbackMissing.Code);
-        missingTask.Errors[0].Code.ShouldBe(ResultConstant.Failure.Flow.ResultMissing.Code);
-        missingResult.Errors[0].Code.ShouldBe(ResultConstant.Failure.Flow.ResultMissing.Code);
+            return (binderRan, failure, missingBinder, missingTask, missingResult);
+        });
+        data.Add("generic", static async () =>
+        {
+            var binderRan = false;
+            var failure = await Result<int>.Fail(ResultStub.NotFoundError())
+                .BindAsync((_, _) =>
+                {
+                    binderRan = true;
+                    return Task.FromResult(Result<string>.Ok("x"));
+                });
+            var missingBinder = await Result<int>.Ok(1)
+                .BindAsync((Func<int, CancellationToken, Task<Result<string>>>?)null);
+            var missingTask = await Result<int>.Ok(1)
+                .BindAsync((Func<int, CancellationToken, Task<Result<string>>>)((_, _) => null!));
+            var missingResult = await Result<int>.Ok(1)
+                .BindAsync((_, _) => Task.FromResult((Result<string>)null!));
+
+            return (binderRan, failure, missingBinder, missingTask, missingResult);
+        });
+
+        return data;
     }
 
     #endregion
