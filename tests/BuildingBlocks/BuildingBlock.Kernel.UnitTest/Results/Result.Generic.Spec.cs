@@ -1,0 +1,305 @@
+using BuildingBlock.Kernel.Errors;
+using BuildingBlock.Kernel.Metadata;
+using BuildingBlock.Kernel.Results;
+
+namespace BuildingBlock.Kernel.UnitTest.Results;
+
+/// <summary>Tests for the generic <see cref="Result{TValue}"/> record.</summary>
+[Trait("Category", "Unit")]
+public class ResultGenericSpec
+{
+    #region CopyWith
+
+    /// <summary>CopyWith without changes should preserve value and status.</summary>
+    [Fact]
+    public void CopyWith_Without_Changes_Should_Preserve_Value_And_Status()
+    {
+        // Arrange
+        var original = Result<int>.Ok(5);
+
+        // Act
+        var copy = original.CopyWith();
+
+        // Assert
+        copy.Value.ShouldBe(5);
+        copy.StatusCode.ShouldBe(ResultConstant.StatusCode.Ok);
+        copy.Metadata.ShouldNotBeSameAs(original.Metadata);
+    }
+
+    /// <summary>CopyWith with explicit status should use the provided status.</summary>
+    [Fact]
+    public void CopyWith_With_Explicit_Status_Should_Use_Provided_Status()
+    {
+        // Act
+        var copy = Result<int>.Ok(5).CopyWith(statusCode: ResultConstant.StatusCode.Created);
+
+        // Assert
+        copy.StatusCode.ShouldBe(ResultConstant.StatusCode.Created);
+    }
+
+    /// <summary>CopyWith errors on failure should re-resolve status from new errors.</summary>
+    [Fact]
+    public void CopyWith_Errors_On_Failure_Should_ReResolve_Status_From_New_Errors()
+    {
+        // Arrange
+        var failure = Result<int>.Fail(ResultStub.NotFoundError());
+
+        // Act
+        var copy = failure.CopyWith(errors: new List<Error> { ResultStub.ConflictError() });
+
+        // Assert
+        copy.StatusCode.ShouldBe(ResultConstant.StatusCode.Conflict);
+        copy.Errors[0].Code.ShouldBe("test.conflict");
+    }
+
+    /// <summary>CopyWith value with explicit status and metadata should apply them.</summary>
+    [Fact]
+    public void CopyWith_Value_With_Explicit_Status_And_Metadata_Should_Apply_Them()
+    {
+        // Arrange
+        var original = Result<int>.Ok(5);
+        var replacement = MetadataDictionary.Create().With("k", "v");
+
+        // Act
+        var copy = original.CopyWith(
+            value: 7,
+            statusCode: ResultConstant.StatusCode.Created,
+            metadata: replacement);
+
+        // Assert
+        copy.Value.ShouldBe(7);
+        copy.StatusCode.ShouldBe(ResultConstant.StatusCode.Created);
+        copy.Metadata.ShouldNotBeSameAs(replacement);
+        copy.Metadata["k"].ShouldBe("v");
+    }
+
+    /// <summary>CopyWith value on failure should clear value and use new errors.</summary>
+    [Fact]
+    public void CopyWith_Value_On_Failure_Should_Clear_Value_And_Use_New_Errors()
+    {
+        // Arrange
+        var success = Result<int>.Ok(5);
+
+        // Act
+        var copy = success.CopyWith(value: 0, isSuccess: false, errors: new List<Error> { ResultStub.NotFoundError() });
+
+        // Assert
+        copy.IsFailure.ShouldBeTrue();
+        copy.Value.ShouldBe(default);
+        copy.StatusCode.ShouldBe(ResultConstant.StatusCode.NotFound);
+    }
+
+    /// <summary>CopyWith value errors on failure should re-resolve status.</summary>
+    [Fact]
+    public void CopyWith_Value_Errors_On_Failure_Should_ReResolve_Status()
+    {
+        // Arrange
+        var failure = Result<int>.Fail(ResultStub.NotFoundError());
+
+        // Act
+        var copy = failure.CopyWith(value: 0, errors: new List<Error> { ResultStub.ConflictError() });
+
+        // Assert
+        copy.IsFailure.ShouldBeTrue();
+        copy.StatusCode.ShouldBe(ResultConstant.StatusCode.Conflict);
+    }
+
+    /// <summary>CopyWith errors on success should preserve status and value.</summary>
+    [Fact]
+    public void CopyWith_Errors_On_Success_Should_Preserve_Status_And_Value()
+    {
+        // Act
+        var copy = Result<int>.Ok(5).CopyWith(errors: new List<Error> { ResultStub.NotFoundError() });
+
+        // Assert
+        copy.IsSuccess.ShouldBeTrue();
+        copy.Value.ShouldBe(5);
+        copy.StatusCode.ShouldBe(ResultConstant.StatusCode.Ok);
+        copy.Errors.Count.ShouldBe(1);
+        copy.Errors[0].Code.ShouldBe("test.not_found");
+    }
+
+    /// <summary>CopyWith value errors on success should preserve status.</summary>
+    [Fact]
+    public void CopyWith_Value_Errors_On_Success_Should_Preserve_Status()
+    {
+        // Act
+        var copy = Result<int>.Ok(5).CopyWith(value: 7, errors: new List<Error> { ResultStub.NotFoundError() });
+
+        // Assert
+        copy.IsSuccess.ShouldBeTrue();
+        copy.Value.ShouldBe(7);
+        copy.StatusCode.ShouldBe(ResultConstant.StatusCode.Ok);
+        copy.Errors.Count.ShouldBe(1);
+    }
+
+    /// <summary>CopyWith value on failure without errors should preserve errors and status.</summary>
+    [Fact]
+    public void CopyWith_Value_On_Failure_Without_Errors_Should_Preserve_Errors_And_Status()
+    {
+        // Arrange
+        var failure = Result<int>.Fail(ResultStub.NotFoundError());
+
+        // Act
+        var copy = failure.CopyWith(value: 0);
+
+        // Assert
+        copy.IsFailure.ShouldBeTrue();
+        copy.Value.ShouldBe(default);
+        copy.StatusCode.ShouldBe(ResultConstant.StatusCode.NotFound);
+        copy.Errors.Count.ShouldBe(1);
+        copy.Errors[0].Code.ShouldBe("test.not_found");
+    }
+
+    /// <summary>CopyWith with metadata should clone the provided bag.</summary>
+    [Fact]
+    public void CopyWith_With_Metadata_Should_Clone_Provided_Bag()
+    {
+        // Arrange
+        var replacement = MetadataDictionary.Create().With("k", "v");
+
+        // Act
+        var copy = Result<int>.Ok(5).CopyWith(metadata: replacement);
+
+        // Assert
+        copy.Metadata.ShouldNotBeSameAs(replacement);
+        copy.Metadata["k"].ShouldBe("v");
+    }
+
+    /// <summary>CopyWith should replace value and clone metadata.</summary>
+    [Fact]
+    public void CopyWith_Should_Replace_Value_And_Clone_Metadata()
+    {
+        // Arrange
+        var original = Result<int>.Ok(5).WithMetadata("source", "original");
+
+        // Act
+        var copy = original.CopyWith(value: 10);
+
+        // Assert
+        copy.Value.ShouldBe(10);
+        copy.StatusCode.ShouldBe(original.StatusCode);
+        copy.Metadata.ShouldNotBeSameAs(original.Metadata);
+        copy.Metadata["source"].ShouldBe("original");
+    }
+
+    /// <summary>CopyWith should clear value when changing to failure.</summary>
+    [Fact]
+    public void CopyWith_Should_Clear_Value_When_Changing_To_Failure()
+    {
+        // Arrange
+        var original = Result<int>.Ok(5);
+        var errors = new List<Error> { ResultStub.NotFoundError() };
+
+        // Act
+        var copy = original.CopyWith(isSuccess: false, errors: errors);
+
+        // Assert
+        copy.IsFailure.ShouldBeTrue();
+        copy.Value.ShouldBe(default);
+        copy.StatusCode.ShouldBe(ResultConstant.StatusCode.NotFound);
+        copy.TryGetValue(out _).ShouldBeFalse();
+    }
+
+    /// <summary>CopyWith should require replacement value when changing failure to success.</summary>
+    [Fact]
+    public void CopyWith_Should_Require_Replacement_Value_When_Changing_Failure_To_Success()
+    {
+        // Arrange
+        var failure = Result<int>.Fail(ResultStub.NotFoundError());
+
+        // Act
+        var act = () => failure.CopyWith(isSuccess: true);
+
+        // Assert
+        Should.Throw<ArgumentException>(act);
+    }
+
+    /// <summary>CopyWith with replacement value should allow failure to success transition.</summary>
+    [Fact]
+    public void CopyWith_With_Replacement_Value_Should_Allow_Failure_To_Success_Transition()
+    {
+        // Arrange
+        var failure = Result<int>.Fail(ResultStub.NotFoundError());
+
+        // Act
+        var copy = failure.CopyWith(value: 42, isSuccess: true);
+
+        // Assert
+        copy.IsSuccess.ShouldBeTrue();
+        copy.Value.ShouldBe(42);
+        copy.Errors.ShouldBeEmpty();
+        copy.StatusCode.ShouldBe(ResultConstant.StatusCode.Ok);
+    }
+
+    #endregion
+
+    #region Equality
+
+    /// <summary>Generic result equality should compare state and value.</summary>
+    [Fact]
+    public void Result_Generic_Equality_Should_Compare_State_And_Value()
+    {
+        // Arrange
+        var left = Result<int>.Ok(5);
+        var right = Result<int>.Ok(5);
+
+        // Act & Assert
+        left.Equals(right).ShouldBeTrue();
+        (left == right).ShouldBeTrue();
+        left.Equals(Result<int>.Ok(6)).ShouldBeFalse();
+        left.Equals(Result<int>.Fail(ResultStub.NotFoundError())).ShouldBeFalse();
+        left.Equals((Result<int>?)null).ShouldBeFalse();
+    }
+
+    /// <summary>Generic result GetHashCode should match for same state.</summary>
+    [Fact]
+    public void Result_Generic_GetHashCode_Same_State_Should_Match()
+    {
+        // Arrange
+        var left = Result<int>.Fail(ResultStub.NotFoundError());
+        var right = Result<int>.Fail(ResultStub.NotFoundError());
+
+        // Act & Assert
+        left.GetHashCode().ShouldBe(right.GetHashCode());
+    }
+
+    #endregion
+
+    #region Value Access
+
+    /// <summary>TryGetValue and ToString should reflect result state.</summary>
+    [Fact]
+    public void TryGetValue_And_ToString_Should_Reflect_Result_State()
+    {
+        // Arrange
+        var success = Result<int>.Ok(42);
+        var failure = Result<int>.Fail(ResultStub.NotFoundError());
+
+        // Act & Assert
+        success.TryGetValue(out var value).ShouldBeTrue();
+        value.ShouldBe(42);
+        success.ToString().ShouldBe("Success: 42");
+
+        failure.TryGetValue(out _).ShouldBeFalse();
+        failure.ToString().ShouldContain("test.not_found");
+        failure.ToString().ShouldContain("test.not_found");
+    }
+
+    #endregion
+
+    #region Constructor
+
+    /// <summary>Constructor should reject a success without a value.</summary>
+    [Fact]
+    public void Constructor_Should_Reject_A_Success_Without_A_Value()
+    {
+        // Act
+        var act = () => new Result<string>(isSuccess: true, value: null!);
+
+        // Assert
+        Should.Throw<ArgumentException>(act);
+    }
+
+    #endregion
+}
