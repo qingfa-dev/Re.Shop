@@ -1,0 +1,251 @@
+<Project>
+
+  <!--
+    ======================================================================
+    ReSys.eShop · Directory.Build.props
+    ======================================================================
+    Repository-wide MSBuild PROPERTIES. MSBuild imports this file into every
+    project below this directory BEFORE the project's own body is evaluated.
+
+    Evaluation-order rules (read before editing):
+      * A .csproj can override anything set here by assigning it again.
+      * Conditions in THIS file cannot see properties that a .csproj sets
+        later (e.g. a condition on $(IsPackable) here only sees the value
+        assigned in this file). Logic that depends on project-level values
+        belongs in Directory.Build.targets, which is evaluated afterwards.
+      * Global properties (-p:Name=Value, environment variables such as CI)
+        are visible everywhere and cannot be overridden by file assignments.
+
+    Profiles:
+      Test        - any project located under <repo>/tests/
+      Production  - every other project
+
+    Scope:
+      * Sets properties only. It does NOT add package references; each
+        vertical slice declares its own packages (versions are centralised
+        in Directory.Packages.props).
+      * Validation of these settings lives in Directory.Build.targets.
+    ======================================================================
+  -->
+
+
+  <!-- ====================================================================
+       0. Profile detection
+       ==================================================================== -->
+
+  <PropertyGroup>
+
+    <!--
+      Absolute, OS-normalised path of <repo>/tests/ including the trailing
+      separator, so a sibling folder such as "tests-tools/" does NOT match.
+    -->
+    <_ReSysTestsRoot>$([MSBuild]::NormalizeDirectory('$(MSBuildThisFileDirectory)', 'tests'))</_ReSysTestsRoot>
+
+    <!--
+      Anything under tests/ is a test project.
+
+      The property is only auto-detected when it has not already been
+      supplied. Because this file is evaluated before the .csproj, an
+      override is only possible through a global property
+      (-p:IsTestProject=false). For a tooling project that lives in tests/
+      but is not a test project, prefer moving it out of tests/.
+    -->
+    <IsTestProject
+      Condition="'$(IsTestProject)' == '' AND
+                 $(MSBuildProjectDirectory.StartsWith('$(_ReSysTestsRoot)', System.StringComparison.OrdinalIgnoreCase))">true</IsTestProject>
+    <IsTestProject Condition="'$(IsTestProject)' == ''">false</IsTestProject>
+
+    <!-- Human-readable profile name, used in validation messages. -->
+    <ReSysProfile>Production</ReSysProfile>
+    <ReSysProfile Condition="'$(IsTestProject)' == 'true'">Tests</ReSysProfile>
+
+    <!--
+      Single source of truth for the repository URL. Derived values
+      (RepositoryUrl, PackageProjectUrl) are built from it below.
+    -->
+    <ReSysRepositoryWebUrl>https://github.com/qingfa-dev/resys-circle-fund</ReSysRepositoryWebUrl>
+
+  </PropertyGroup>
+
+
+  <!-- ====================================================================
+       1. Settings shared by ALL projects (production and test)
+       ==================================================================== -->
+
+  <PropertyGroup>
+
+    <!-- eShop targets .NET 10. Tests use the same framework as production. -->
+    <TargetFramework>net10.0</TargetFramework>
+
+    <!-- SDK-provided global usings. -->
+    <ImplicitUsings>enable</ImplicitUsings>
+
+    <!-- Nullable reference type analysis is mandatory. -->
+    <Nullable>enable</Nullable>
+
+    <!--
+      Portable PDBs: required for useful stack traces and Source Link.
+      (LangVersion is intentionally not set: the SDK's stable default is
+      used, so preview language features are never enabled globally.)
+    -->
+    <DebugType>portable</DebugType>
+
+    <!-- Analyzer / code-style enforcement. -->
+    <AnalysisLevel>latest</AnalysisLevel>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+
+    <!--
+      Warnings are errors, in every profile.
+
+      NOTE: this also promotes NuGet audit warnings (NU1901-NU1904) to
+      errors, so a newly published advisory can break restore/build until
+      the package is updated. That is intentional for a financial system.
+      To soften it, add e.g.:
+        <WarningsNotAsErrors>$(WarningsNotAsErrors);NU1901;NU1902</WarningsNotAsErrors>
+    -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+
+    <!-- NuGet vulnerability auditing: direct + transitive, moderate and up. -->
+    <NuGetAudit>true</NuGetAudit>
+    <NuGetAuditMode>all</NuGetAuditMode>
+    <NuGetAuditLevel>moderate</NuGetAuditLevel>
+
+    <!--
+      Generate packages.lock.json for every project (commit these files).
+      CI enforces them with RestoreLockedMode (see section 2).
+    -->
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+
+    <!--
+      Skip redundant work for builds that are triggered implicitly
+      (e.g. by dotnet run / dotnet test).
+    -->
+    <OptimizeImplicitlyTriggeredBuild>true</OptimizeImplicitlyTriggeredBuild>
+
+  </PropertyGroup>
+
+
+  <!-- ====================================================================
+       2. Continuous integration / reproducible builds
+       ====================================================================
+       $(CI) is 'true' on GitHub Actions, Azure Pipelines, GitLab, etc.
+       Deterministic builds are already the SDK default, so only the extra
+       CI switches are set here (Directory.Build.targets verifies the rest).
+       ==================================================================== -->
+
+  <PropertyGroup Condition="'$(CI)' == 'true'">
+
+    <!-- Normalises source paths so binaries are byte-for-byte reproducible. -->
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+
+    <!--
+      Restore strictly from the committed lock files. Prevents CI from
+      silently resolving a newer dependency graph than the one reviewed.
+    -->
+    <RestoreLockedMode>true</RestoreLockedMode>
+
+    <!-- Embed generated/untracked sources in the PDB so Source Link works. -->
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+
+  </PropertyGroup>
+
+
+  <!-- ====================================================================
+       3. Production profile
+       ==================================================================== -->
+
+  <PropertyGroup Condition="'$(IsTestProject)' != 'true'">
+
+    <!--
+      Production projects produce XML docs.
+      Consequence: with TreatWarningsAsErrors, CS1591 makes every missing
+      public-API doc comment a build error. Disable per project
+      (<GenerateDocumentationFile>false</GenerateDocumentationFile>) for
+      executable-only projects where the docs add no value.
+    -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+
+    <!--
+      Repository-wide analyzer exceptions (keep this list short):
+        CA1716  Identifiers should not match language keywords.
+        CA1848  Use LoggerMessage delegates instead of ILogger extension methods.
+    -->
+    <NoWarn>$(NoWarn);CA1716;CA1848</NoWarn>
+
+    <!-- Application metadata. -->
+    <Authors>ReSys Team</Authors>
+    <Company>ReSys</Company>
+    <Product>ReSys.eShop</Product>
+
+    <!--
+      Projects are not NuGet packages by default. A project that is meant to
+      be a package opts in with <IsPackable>true</IsPackable> in its .csproj.
+    -->
+    <IsPackable>false</IsPackable>
+
+    <!-- Repository / Source Link metadata. -->
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <RepositoryUrl>$(ReSysRepositoryWebUrl).git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+
+    <!--
+      Package metadata. Set unconditionally: it is inert unless a project
+      opts in to packing, and a condition on $(IsPackable) would not work
+      here because the .csproj has not been evaluated yet.
+    -->
+    <Copyright>Copyright © ReSys Team</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>$(ReSysRepositoryWebUrl)</PackageProjectUrl>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+
+    <!--
+      Versioning: intentionally not set. The SDK defaults to 1.0.0 and
+      derives AssemblyVersion/FileVersion from it. Set VersionPrefix in a
+      project, or pass -p:Version=x.y.z from the release pipeline.
+    -->
+
+  </PropertyGroup>
+
+
+  <!-- ====================================================================
+       4. Test profile (projects under tests/)
+       ==================================================================== -->
+
+  <PropertyGroup Condition="'$(IsTestProject)' == 'true'">
+
+    <!-- Test assemblies are never deployable artifacts or NuGet packages. -->
+    <IsPackable>false</IsPackable>
+    <IsPublishable>false</IsPublishable>
+
+    <!--
+      Test-specific analyzer exceptions:
+        CS1591    Public members need no XML documentation.
+        CS1573    Partial parameter documentation is acceptable.
+        CA1707    Underscores are conventional in descriptive test names.
+        xUnit1051 CancellationToken guidance may be bypassed when the
+                  framework controls execution.
+        CA1861    Test data often uses inline constant arrays.
+    -->
+    <NoWarn>$(NoWarn);CS1591;CS1573;CA1707;xUnit1051;CA1861</NoWarn>
+
+  </PropertyGroup>
+
+  <!--
+    xUnit parallelism and coverage are NOT MSBuild properties:
+      * Parallelism (parallelizeTestCollections, maxParallelThreads) is
+        configured in xunit.runner.json. If tests/xunit.runner.json exists
+        it is copied into every test project's output automatically.
+        Tests that touch shared database state must isolate it through
+        transactions, unique databases, or fixtures.
+      * Coverage uses coverlet.collector and is opt-in:
+          dotnet test -collect:"XPlat Code Coverage"
+        Output formats and paths belong in a .runsettings file.
+  -->
+  <ItemGroup Condition="'$(IsTestProject)' == 'true' AND Exists('$(MSBuildThisFileDirectory)tests/xunit.runner.json')">
+    <None Include="$(MSBuildThisFileDirectory)tests/xunit.runner.json"
+          Link="xunit.runner.json"
+          CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

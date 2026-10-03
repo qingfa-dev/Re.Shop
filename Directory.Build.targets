@@ -1,0 +1,209 @@
+<Project>
+
+  <!--
+    ======================================================================
+    ReSys.eShop · Directory.Build.targets
+    ======================================================================
+    Repository-wide build TARGETS and guard-rails. Imported AFTER each
+    project body, so every check here sees the final property values,
+    including anything a .csproj overrode.
+
+    Purpose:
+      Directory.Build.props sets the policy; this file fails the build
+      loudly when a project (or command line) drifts away from it.
+
+    Conventions:
+      * Do not put common properties here; they belong in
+        Directory.Build.props.
+      * Every error has a stable code (RESYS001...) so it is searchable.
+      * Nothing runs for design-time builds (IDE IntelliSense), which would
+        otherwise flood the editor with errors.
+      * Both profiles (Production / Tests) share the same checks unless a
+        condition says otherwise. $(ReSysProfile) appears in messages.
+
+    Error codes:
+      RESYS001  Target framework          RESYS008  Source Link
+      RESYS002  Nullable                  RESYS009  Package metadata
+      RESYS003  Analyzers                 RESYS010  Test SDK reference
+      RESYS004  Warnings as errors        RESYS011  Test project packed
+      RESYS005  Deterministic build       RESYS012  Test project published
+      RESYS006  Debug symbols             RESYS013  Restore lock files
+      RESYS007  CI build switches
+    ======================================================================
+  -->
+
+  <PropertyGroup>
+    <!-- Master switch: skip every validation during design-time builds. -->
+    <_ReSysValidate Condition="'$(DesignTimeBuild)' != 'true'">true</_ReSysValidate>
+  </PropertyGroup>
+
+
+  <!-- ====================================================================
+       1. Build configuration (all projects)
+       ==================================================================== -->
+
+  <Target Name="ReSysValidateBuildConfiguration"
+          BeforeTargets="CoreCompile"
+          Condition="'$(_ReSysValidate)' == 'true'">
+
+    <Error Code="RESYS001"
+           Condition="'$(TargetFramework)' != 'net10.0'"
+           Text="[$(ReSysProfile)] $(MSBuildProjectName) must target net10.0 (current: '$(TargetFramework)')." />
+
+    <Error Code="RESYS002"
+           Condition="'$(Nullable)' != 'enable'"
+           Text="[$(ReSysProfile)] $(MSBuildProjectName): nullable reference types must be enabled." />
+
+    <Error Code="RESYS003"
+           Condition="'$(EnableNETAnalyzers)' != 'true'"
+           Text="[$(ReSysProfile)] $(MSBuildProjectName): .NET analyzers must be enabled." />
+
+    <Error Code="RESYS004"
+           Condition="'$(TreatWarningsAsErrors)' != 'true'"
+           Text="[$(ReSysProfile)] $(MSBuildProjectName): TreatWarningsAsErrors must be enabled." />
+
+    <!-- Release output must be reproducible and debuggable. -->
+    <Error Code="RESYS005"
+           Condition="'$(Configuration)' == 'Release' AND '$(Deterministic)' != 'true'"
+           Text="[$(ReSysProfile)] $(MSBuildProjectName): Release builds must be deterministic." />
+
+    <Error Code="RESYS006"
+           Condition="'$(Configuration)' == 'Release' AND ('$(DebugType)' == '' OR '$(DebugType)' == 'none')"
+           Text="[$(ReSysProfile)] $(MSBuildProjectName): Release builds must generate portable debug symbols." />
+
+  </Target>
+
+
+  <!-- ====================================================================
+       2. CI build configuration (all projects) + Source Link (production)
+       ==================================================================== -->
+
+  <Target Name="ReSysValidateCIConfiguration"
+          BeforeTargets="CoreCompile"
+          Condition="'$(_ReSysValidate)' == 'true' AND '$(CI)' == 'true'">
+
+    <Error Code="RESYS007"
+           Condition="'$(ContinuousIntegrationBuild)' != 'true'"
+           Text="[$(ReSysProfile)] $(MSBuildProjectName): CI builds require ContinuousIntegrationBuild=true." />
+
+    <Error Code="RESYS005"
+           Condition="'$(Deterministic)' != 'true'"
+           Text="[$(ReSysProfile)] $(MSBuildProjectName): CI builds require Deterministic=true." />
+
+    <!-- Source Link only matters for assemblies we ship. -->
+    <Error Code="RESYS008"
+           Condition="'$(IsTestProject)' != 'true' AND '$(PublishRepositoryUrl)' != 'true'"
+           Text="$(MSBuildProjectName): CI builds require PublishRepositoryUrl=true." />
+
+    <Error Code="RESYS008"
+           Condition="'$(IsTestProject)' != 'true' AND '$(RepositoryUrl)' == ''"
+           Text="$(MSBuildProjectName): RepositoryUrl must be configured." />
+
+    <Error Code="RESYS008"
+           Condition="'$(IsTestProject)' != 'true' AND '$(RepositoryType)' != 'git'"
+           Text="$(MSBuildProjectName): RepositoryType must be 'git'." />
+
+  </Target>
+
+
+  <!-- ====================================================================
+       3. Restore lock files (all projects, CI only)
+       ====================================================================
+       Runs before the Restore target, so a project that disabled lock files
+       fails fast instead of silently resolving a different dependency graph.
+       ==================================================================== -->
+
+  <Target Name="ReSysValidateRestoreConfiguration"
+          BeforeTargets="Restore"
+          Condition="'$(_ReSysValidate)' == 'true' AND '$(CI)' == 'true'">
+
+    <Error Code="RESYS013"
+           Condition="'$(RestorePackagesWithLockFile)' != 'true'"
+           Text="[$(ReSysProfile)] $(MSBuildProjectName): CI builds require NuGet lock files (RestorePackagesWithLockFile=true)." />
+
+    <Error Code="RESYS013"
+           Condition="'$(RestoreLockedMode)' != 'true'"
+           Text="[$(ReSysProfile)] $(MSBuildProjectName): CI builds require RestoreLockedMode=true." />
+
+  </Target>
+
+
+  <!-- ====================================================================
+       4. Package validation (production projects that opt in to packing)
+       ==================================================================== -->
+
+  <Target Name="ReSysValidatePack"
+          BeforeTargets="Pack"
+          Condition="'$(_ReSysValidate)' == 'true' AND '$(IsTestProject)' != 'true' AND '$(IsPackable)' == 'true'">
+
+    <Error Code="RESYS009"
+           Condition="'$(RepositoryUrl)' == ''"
+           Text="$(MSBuildProjectName): packable projects must define RepositoryUrl." />
+
+    <Error Code="RESYS009"
+           Condition="'$(PackageLicenseExpression)' == '' AND '$(PackageLicenseFile)' == ''"
+           Text="$(MSBuildProjectName): packable projects must define a package license." />
+
+  </Target>
+
+
+  <!-- ====================================================================
+       5. Test project requirements
+       ====================================================================
+       Version of Microsoft.NET.Test.Sdk is managed centrally in
+       Directory.Packages.props.
+
+       Helper projects under tests/ that contain no tests (shared fixtures,
+       builders, ...) can opt out in their .csproj with:
+         <ReSysRequireTestSdk>false</ReSysRequireTestSdk>
+       ==================================================================== -->
+
+  <Target Name="ReSysValidateTestSdk"
+          BeforeTargets="CoreCompile"
+          Condition="'$(_ReSysValidate)' == 'true' AND '$(IsTestProject)' == 'true' AND '$(ReSysRequireTestSdk)' != 'false'">
+
+    <Error Code="RESYS010"
+           Condition="'@(PackageReference->AnyHaveMetadataValue('Identity', 'Microsoft.NET.Test.Sdk'))' != 'true'"
+           Text="Test project $(MSBuildProjectName) must reference Microsoft.NET.Test.Sdk (or set ReSysRequireTestSdk=false for a helper project)." />
+
+  </Target>
+
+
+  <!-- ====================================================================
+       6. Test packaging / publishing protection
+       ====================================================================
+       Test projects already default to IsPackable=false / IsPublishable=false,
+       so solution-wide `dotnet pack` / `dotnet publish` simply skip them.
+       These guards only fire when a test project has explicitly re-enabled
+       packing or publishing, and therefore never break solution-wide runs.
+       ==================================================================== -->
+
+  <Target Name="ReSysPreventTestPack"
+          BeforeTargets="Pack"
+          Condition="'$(IsTestProject)' == 'true' AND '$(IsPackable)' == 'true'">
+    <Error Code="RESYS011"
+           Text="Test project $(MSBuildProjectName) cannot be packed (IsPackable must remain false)." />
+  </Target>
+
+  <Target Name="ReSysPreventTestPublish"
+          BeforeTargets="Publish"
+          Condition="'$(IsTestProject)' == 'true' AND '$(IsPublishable)' == 'true'">
+    <Error Code="RESYS012"
+           Text="Test project $(MSBuildProjectName) cannot be published (IsPublishable must remain false)." />
+  </Target>
+
+
+  <!-- ====================================================================
+       7. Build information (CI only)
+       ====================================================================
+       One summary line per project to make CI logs easy to scan.
+       ==================================================================== -->
+
+  <Target Name="ReSysBuildInformation"
+          AfterTargets="Build"
+          Condition="'$(_ReSysValidate)' == 'true' AND '$(CI)' == 'true'">
+    <Message Importance="High"
+             Text="ReSys.eShop [$(ReSysProfile)] | Project=$(MSBuildProjectName) | Target=$(TargetFramework) | Configuration=$(Configuration) | Version=$(Version) | Deterministic=$(Deterministic)" />
+  </Target>
+
+</Project>
