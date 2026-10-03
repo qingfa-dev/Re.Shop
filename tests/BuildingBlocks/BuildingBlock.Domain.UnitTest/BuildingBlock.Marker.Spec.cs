@@ -1,17 +1,17 @@
 using System.Reflection;
 
-namespace BuildingBlock.Kernel.UnitTest;
+namespace BuildingBlock.Domain.UnitTest;
 
 [Trait("Category", "Contract")]
 public class BuildingBlockMarkerSpec
 {
-    private static readonly Type MarkerType = typeof(BuildingBlockKernelMarker);
+    private static readonly Type MarkerType = typeof(BuildingBlockDomainMarker);
 
     [Fact]
     public void BuildingBlockMarker_Should_Be_A_Static_StaticClass()
     {
         // Arrange
-        var type = typeof(BuildingBlockKernelMarker);
+        var type = typeof(BuildingBlockDomainMarker);
 
         // Act
         // (no action needed)
@@ -46,7 +46,7 @@ public class BuildingBlockMarkerSpec
     }
 
     [Fact]
-    public void BuildingBlockMarker_Should_Live_In_Kernel_Namespace()
+    public void BuildingBlockMarker_Should_Live_In_Domain_Namespace()
     {
         // Arrange
         var type = MarkerType;
@@ -55,11 +55,11 @@ public class BuildingBlockMarkerSpec
         var @namespace = type.Namespace;
 
         // Assert
-        @namespace.ShouldBe("BuildingBlock.Kernel");
+        @namespace.ShouldBe("BuildingBlock.Domain");
     }
 
     [Fact]
-    public void BuildingBlockMarker_Should_Live_In_Kernel_Assembly()
+    public void BuildingBlockMarker_Should_Live_In_Domain_Assembly()
     {
         // Arrange
         var type = MarkerType;
@@ -68,7 +68,7 @@ public class BuildingBlockMarkerSpec
         var assemblyName = type.Assembly.GetName().Name;
 
         // Assert
-        assemblyName.ShouldBe("BuildingBlock.Kernel");
+        assemblyName.ShouldBe("BuildingBlock.Domain");
     }
 
     [Theory]
