@@ -5,7 +5,8 @@ using BuildingBlock.Kernel.Metadata;
 
 namespace BuildingBlock.Kernel.Results;
 
-public partial record Result<TValue> : Result, IResult<TValue, Error>
+public partial record Result<TValue>
+    : Result, IResult<TValue, Error>, IResultFailure<Result<TValue>, Error>
 {
     #region Value
 

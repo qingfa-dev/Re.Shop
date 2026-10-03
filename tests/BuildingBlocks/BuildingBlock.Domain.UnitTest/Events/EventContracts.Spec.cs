@@ -1,6 +1,8 @@
 using BuildingBlock.Domain.Events;
 using BuildingBlock.Domain.Events.Domain;
 using BuildingBlock.Domain.Events.Integration;
+using BuildingBlock.Domain.Aggregates;
+using BuildingBlock.Domain.Aggregates.Repositories;
 using BuildingBlock.Kernel.Metadata;
 using Mediator;
 
@@ -123,23 +125,39 @@ public sealed class EventContractsSpec
     }
 
     [Fact]
-    public void Integration_Event_Publisher_Should_Expose_Only_Integration_Publish_Contract()
+    public void Domain_Event_Dispatcher_Should_Use_Mediator_Notification_Publisher()
     {
-        var methods = typeof(IIntegrationEventPublisher).GetMethods();
-
-        methods.Length.ShouldBe(1);
-        methods[0].Name.ShouldBe("PublishAsync");
-        methods[0].ReturnType.ShouldBe(typeof(Task));
-        methods[0].IsGenericMethod.ShouldBeFalse();
-        methods[0].GetParameters().Select(parameter => parameter.ParameterType)
-            .ShouldBe(new[] { typeof(IIntegrationEvent), typeof(CancellationToken) });
+        typeof(INotificationPublisher).IsAssignableFrom(typeof(IDomainEventDispatcher)).ShouldBeTrue();
     }
 
     [Fact]
-    public void Event_Publishers_Should_Use_Mediator_Only_For_Domain_Dispatcher()
+    public void Aggregate_Repository_Should_Expose_Only_Load_Add_And_Remove()
     {
-        typeof(INotificationPublisher).IsAssignableFrom(typeof(IDomainEventDispatcher)).ShouldBeTrue();
-        typeof(INotificationPublisher).IsAssignableFrom(typeof(IIntegrationEventPublisher)).ShouldBeFalse();
+        var repositoryType = typeof(IAggregateRepository<TestAggregate, Guid>);
+        var methods = repositoryType.GetMethods();
+
+        methods.Select(method => method.Name)
+            .ShouldBe(new[] { "GetByIdAsync", "AddAsync", "RemoveAsync" });
+
+        var getById = methods.Single(method => method.Name == "GetByIdAsync");
+        getById.ReturnType.ShouldBe(typeof(ValueTask<TestAggregate>));
+        getById.GetParameters().Select(parameter => parameter.ParameterType)
+            .ShouldBe(new[] { typeof(Guid), typeof(CancellationToken) });
+
+        foreach (var methodName in new[] { "AddAsync", "RemoveAsync" })
+        {
+            var method = methods.Single(candidate => candidate.Name == methodName);
+            method.ReturnType.ShouldBe(typeof(ValueTask));
+            method.GetParameters().Select(parameter => parameter.ParameterType)
+                .ShouldBe(new[] { typeof(TestAggregate), typeof(CancellationToken) });
+        }
+
+        var aggregateTypeParameter = typeof(IAggregateRepository<,>).GetGenericArguments()[0];
+        aggregateTypeParameter.GenericParameterAttributes
+            .HasFlag(System.Reflection.GenericParameterAttributes.ReferenceTypeConstraint)
+            .ShouldBeTrue();
+        aggregateTypeParameter.GetGenericParameterConstraints()
+            .ShouldContain(typeof(IAggregateRoot));
     }
 
     private sealed class TestDomainEventHandler : IDomainEventHandler<TestDomainEvent>
@@ -163,4 +181,6 @@ public sealed class EventContractsSpec
         DateTimeOffset? occurredOnUtc = null,
         MetadataDictionary? metadata = null)
         : IntegrationEvent(eventType, eventVersion, eventId, occurredOnUtc, metadata);
+
+    private sealed class TestAggregate : AggregateRoot;
 }

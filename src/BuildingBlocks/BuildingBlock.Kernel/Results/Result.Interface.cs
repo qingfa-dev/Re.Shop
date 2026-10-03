@@ -43,5 +43,11 @@ public interface IResult<TValue, TError> : IResult<TError>
 
     #endregion
 }
-
 #endregion
+
+public interface IResultFailure<TSelf, TError>
+    where TSelf : IResultFailure<TSelf, TError>
+    where TError : IError
+{
+    static abstract TSelf Fail(IEnumerable<TError> errors);
+}

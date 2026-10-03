@@ -1,12 +1,17 @@
 <Solution>
   <Folder Name="/src/" />
   <Folder Name="/src/BuildingBlocks/">
+    <Project Path="src/BuildingBlocks/BuildingBlock.Application/BuildingBlock.Application.csproj" />
     <Project Path="src/BuildingBlocks/BuildingBlock.Domain/BuildingBlock.Domain.csproj" />
     <Project Path="src/BuildingBlocks/BuildingBlock.Kernel/BuildingBlock.Kernel.csproj" />
+    <Project Path="src/BuildingBlocks/BuildingBlock.Messaging.Abstractions/BuildingBlock.Messaging.Abstractions.csproj" />
+    <Project Path="src/BuildingBlocks/BuildingBlock.Persistence.Abstractions/BuildingBlock.Persistence.Abstractions.csproj" />
   </Folder>
   <Folder Name="/tests/" />
   <Folder Name="/tests/BuildingBlocks/">
+    <Project Path="tests/BuildingBlocks/BuildingBlock.Application.UnitTest/BuildingBlock.Application.UnitTest.csproj" />
     <Project Path="tests/BuildingBlocks/BuildingBlock.Domain.UnitTest/BuildingBlock.Domain.UnitTest.csproj" />
+    <Project Path="tests/BuildingBlocks/BuildingBlock.Foundation.Abstractions.UnitTest/BuildingBlock.Foundation.Abstractions.UnitTest.csproj" />
     <Project Path="tests/BuildingBlocks/BuildingBlock.Kernel.UnitTest/BuildingBlock.Kernel.UnitTest.csproj" />
   </Folder>
 </Solution>

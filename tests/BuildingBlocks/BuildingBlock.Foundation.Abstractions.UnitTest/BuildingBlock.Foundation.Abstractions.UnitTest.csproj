@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference
+      Include="../../../src/BuildingBlocks/BuildingBlock.Domain/BuildingBlock.Domain.csproj" />
+    <ProjectReference
+      Include="../../../src/BuildingBlocks/BuildingBlock.Persistence.Abstractions/BuildingBlock.Persistence.Abstractions.csproj" />
+    <ProjectReference
+      Include="../../../src/BuildingBlocks/BuildingBlock.Messaging.Abstractions/BuildingBlock.Messaging.Abstractions.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="xunit.analyzers" />
+    <PackageReference Include="Shouldly" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+    <Using Include="Shouldly" />
+  </ItemGroup>
+
+</Project>
