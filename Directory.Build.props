@@ -164,7 +164,7 @@
       (<GenerateDocumentationFile>false</GenerateDocumentationFile>) for
       executable-only projects where the docs add no value.
     -->
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
 
     <!--
       Repository-wide analyzer exceptions (keep this list short):
