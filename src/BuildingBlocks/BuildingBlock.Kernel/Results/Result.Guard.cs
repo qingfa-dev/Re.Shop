@@ -6,7 +6,7 @@ public static class ResultGuard
 {
     #region Status
 
-    public static IError? ValidateStatusCode(int statusCode, bool isSuccess)
+    public static Error? ValidateStatusCode(int statusCode, bool isSuccess)
     {
 
         if (statusCode is < ResultConstant.Constraint.Status.Min or > ResultConstant.Constraint.Status.Max)
@@ -30,7 +30,7 @@ public static class ResultGuard
 
     #region Errors
 
-    public static IError? ValidateErrors(IReadOnlyList<IError> errors, bool isSuccess)
+    public static Error? ValidateErrors(List<Error> errors, bool isSuccess)
     {
         ArgumentNullException.ThrowIfNull(errors);
         var count = errors.Count;
@@ -44,7 +44,7 @@ public static class ResultGuard
         return null;
     }
 
-    public static IError? ValidateValue<TValue>(bool isSuccess, TValue value)
+    public static Error? ValidateValue<TValue>(bool isSuccess, TValue value)
     {
         if (isSuccess && value is null)
         {
@@ -63,9 +63,9 @@ public static class ResultGuard
 
     #region Result
 
-    public static IError? ValidateResultConsistency(
+    public static Error? ValidateResultConsistency(
         bool isSuccess,
-        IReadOnlyList<IError> errors)
+        List<Error> errors)
     {
         ArgumentNullException.ThrowIfNull(errors);
 

@@ -10,7 +10,7 @@ public partial record Result
 
     public static Result Custom(
         bool isSuccess,
-        IReadOnlyList<IError>? errors = null,
+        List<Error>? errors = null,
         int? statusCode = null)
         => new(
             isSuccess: isSuccess,
@@ -47,28 +47,28 @@ public partial record Result
     #region Failure
 
     public static Result Failure(
-        IEnumerable<IError> errors)
+        IEnumerable<Error> errors)
         => Fail(errors);
 
     public static Result Failure(
-        IEnumerable<IError> errors,
+        IEnumerable<Error> errors,
         int statusCode)
         => Fail(errors, statusCode);
 
-    public static Result Fail(params IError[] errors)
-        => Fail((IEnumerable<IError>)errors);
+    public static Result Fail(params Error[] errors)
+        => Fail((IEnumerable<Error>)errors);
 
-    public static Result Fail(IEnumerable<IError> errors)
+    public static Result Fail(IEnumerable<Error> errors)
         => CreateFailure(errors, statusCode: null);
 
-    public static Result Fail(IEnumerable<IError> errors, int statusCode)
+    public static Result Fail(IEnumerable<Error> errors, int statusCode)
         => CreateFailure(errors, statusCode);
 
-    private static Result CreateFailure(IEnumerable<IError> errors, int? statusCode)
+    private static Result CreateFailure(IEnumerable<Error> errors, int? statusCode)
     {
         ArgumentNullException.ThrowIfNull(errors);
 
-        var errorList = errors as IReadOnlyList<IError> ?? errors.ToArray();
+        var errorList = errors.ToList();
         var resolvedStatusCode = statusCode ?? ResolveStatus(errorList);
 
         return new Result(
@@ -81,9 +81,9 @@ public partial record Result
 
     #region Status Resolution
 
-    internal static int ResolveStatus(IReadOnlyList<IError> errors)
+    internal static int ResolveStatus(List<Error> errors)
     {
-        IError? highestSeverityError = null;
+        Error? highestSeverityError = null;
         foreach (var error in errors)
         {
             if (highestSeverityError is null || error.Severity > highestSeverityError.Severity)

@@ -1,6 +1,7 @@
+using BuildingBlock.Kernel.Errors;
 using BuildingBlock.Kernel.Results;
 
-namespace BuildingBlock.Kernel.UnitTest;
+namespace BuildingBlock.Kernel.UnitTest.Results;
 
 [Trait("Category", "Unit")]
 public class ResultInterfaceSpec
@@ -8,7 +9,7 @@ public class ResultInterfaceSpec
     [Fact]
     public void NonGeneric_Result_Should_Implement_IResult()
     {
-        IResult result = Result.Ok();
+        IResult<Error> result = Result.Ok();
 
         result.IsSuccess.ShouldBeTrue();
         result.IsFailure.ShouldBeFalse();
@@ -20,7 +21,7 @@ public class ResultInterfaceSpec
     [Fact]
     public void Generic_Result_Should_Implement_IResult_And_IResultOfValue()
     {
-        IResult<int> result = Result<int>.Ok(42);
+        IResult<int, Error> result = Result<int>.Ok(42);
 
         result.IsSuccess.ShouldBeTrue();
         result.Value.ShouldBe(42);
@@ -31,7 +32,7 @@ public class ResultInterfaceSpec
     [Fact]
     public void Generic_Failure_Should_Expose_Failed_State_Through_IResult_Contract()
     {
-        IResult<int> result = Result<int>.Fail(ResultStub.NotFoundError());
+        IResult<int, Error> result = Result<int>.Fail(ResultStub.NotFoundError());
 
         result.IsFailure.ShouldBeTrue();
         result.HasValue.ShouldBeFalse();

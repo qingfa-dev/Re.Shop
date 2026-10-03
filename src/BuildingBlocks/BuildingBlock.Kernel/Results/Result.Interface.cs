@@ -7,7 +7,8 @@ namespace BuildingBlock.Kernel.Results;
 
 #region Result
 
-public interface IResult : IMetadata
+public interface IResult<TError> : IMetadata
+where TError : IError
 {
     #region State
 
@@ -20,7 +21,7 @@ public interface IResult : IMetadata
 
     #region Errors
 
-    IReadOnlyList<IError> Errors { get; }
+    List<TError> Errors { get; }
 
     #endregion
 }
@@ -29,7 +30,8 @@ public interface IResult : IMetadata
 
 #region Result<TValue>
 
-public interface IResult<TValue> : IResult
+public interface IResult<TValue, TError> : IResult<TError>
+    where TError : IError
 {
     #region Value
 

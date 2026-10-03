@@ -1,8 +1,8 @@
 using System.Reflection;
-using System.Text.RegularExpressions;
+
 using BuildingBlock.Kernel.Metadata;
 
-namespace BuildingBlock.Kernel.UnitTest;
+namespace BuildingBlock.Kernel.UnitTest.Metadata;
 
 [Trait("Category", "Unit")]
 public class MetadataConstantSpec

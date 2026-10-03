@@ -31,26 +31,26 @@ public partial record Result<TValue>
 
     #region Failure
 
-    public static new Result<TValue> Failure(IEnumerable<IError> errors)
+    public static new Result<TValue> Failure(IEnumerable<Error> errors)
         => Fail(errors);
 
-    public static new Result<TValue> Failure(IEnumerable<IError> errors, int statusCode)
+    public static new Result<TValue> Failure(IEnumerable<Error> errors, int statusCode)
         => Fail(errors, statusCode);
 
-    public static new Result<TValue> Fail(params IError[] errors)
-        => Fail((IEnumerable<IError>)errors);
+    public static new Result<TValue> Fail(params Error[] errors)
+        => Fail((IEnumerable<Error>)errors);
 
-    public static new Result<TValue> Fail(IEnumerable<IError> errors)
+    public static new Result<TValue> Fail(IEnumerable<Error> errors)
         => CreateFailure(errors, statusCode: null);
 
-    public static new Result<TValue> Fail(IEnumerable<IError> errors, int statusCode)
+    public static new Result<TValue> Fail(IEnumerable<Error> errors, int statusCode)
         => CreateFailure(errors, statusCode);
 
-    private static Result<TValue> CreateFailure(IEnumerable<IError> errors, int? statusCode)
+    private static Result<TValue> CreateFailure(IEnumerable<Error> errors, int? statusCode)
     {
         ArgumentNullException.ThrowIfNull(errors);
 
-        var errorList = errors as IReadOnlyList<IError> ?? errors.ToArray();
+        var errorList = errors.ToList();
         var resolvedStatusCode = statusCode ?? Result.ResolveStatus(errorList);
 
         return new Result<TValue>(

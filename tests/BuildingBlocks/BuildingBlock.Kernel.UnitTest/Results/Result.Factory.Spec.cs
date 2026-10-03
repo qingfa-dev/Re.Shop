@@ -1,7 +1,7 @@
 using BuildingBlock.Kernel.Errors;
 using BuildingBlock.Kernel.Results;
 
-namespace BuildingBlock.Kernel.UnitTest;
+namespace BuildingBlock.Kernel.UnitTest.Results;
 
 [Trait("Category", "Unit")]
 public class ResultFactorySpec
@@ -79,7 +79,7 @@ public class ResultFactorySpec
     [Fact]
     public void Failure_Factory_Should_Reject_Empty_Error_List()
     {
-        var act = () => Result.Fail(Array.Empty<IError>());
+        var act = () => Result.Fail(Array.Empty<Error>());
 
         Should.Throw<ArgumentException>(act);
     }
@@ -87,7 +87,7 @@ public class ResultFactorySpec
     [Fact]
     public void Failure_Enumerable_Overloads_Should_Create_Failures()
     {
-        var errors = new IError[] { ResultStub.NotFoundError() };
+        var errors = new Error[] { ResultStub.NotFoundError() };
 
         var resolved = Result.Failure(errors);
         var explicitStatus = Result.Failure(errors, ResultConstant.StatusCode.ServiceUnavailable);
@@ -146,7 +146,7 @@ public class ResultFactorySpec
     {
         var result = Result.Custom(
             isSuccess: false,
-            errors: new IError[] { ResultStub.NotFoundError() });
+            errors: new List<Error> { ResultStub.NotFoundError() });
 
         result.IsFailure.ShouldBeTrue();
         result.StatusCode.ShouldBe(ResultConstant.StatusCode.NotFound);
@@ -160,7 +160,7 @@ public class ResultFactorySpec
         Should.Throw<ArgumentException>(act);
     }
 
-    private static IEnumerable<IError> Enumerate(IError error)
+    private static IEnumerable<Error> Enumerate(Error error)
     {
         yield return error;
     }

@@ -1,6 +1,6 @@
 using BuildingBlock.Kernel.Results;
 
-namespace BuildingBlock.Kernel.UnitTest;
+namespace BuildingBlock.Kernel.UnitTest.Results;
 
 [Trait("Category", "Unit")]
 public class ResultErrorSpec

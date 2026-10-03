@@ -11,7 +11,7 @@ public static partial class ResultExtension
     public static TOut? Match<TOut>(
         this Result result,
         Func<TOut>? onSuccess,
-        Func<IReadOnlyList<IError>, TOut>? onFailure)
+        Func<List<Error>, TOut>? onFailure)
     {
         ArgumentNullException.ThrowIfNull(result);
         return result.IsSuccess ? onSuccess is null ? default! : onSuccess()
@@ -22,7 +22,7 @@ public static partial class ResultExtension
     public static TOut? Match<TValue, TOut>(
         this Result<TValue> result,
         Func<TValue, TOut>? onSuccess,
-        Func<IReadOnlyList<IError>, TOut>? onFailure)
+        Func<List<Error>, TOut>? onFailure)
     {
         ArgumentNullException.ThrowIfNull(result);
         return result.IsSuccess ? onSuccess is null ? default! : onSuccess(result.Value)
@@ -33,7 +33,7 @@ public static partial class ResultExtension
     public static async Task<TOut?> MatchAsync<TOut>(
         this Result result,
         Func<CancellationToken, Task<TOut>>? onSuccess,
-        Func<IReadOnlyList<IError>, CancellationToken, Task<TOut>>? onFailure,
+        Func<List<Error>, CancellationToken, Task<TOut>>? onFailure,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(result);
@@ -53,7 +53,7 @@ public static partial class ResultExtension
     public static async Task<TOut?> MatchAsync<TValue, TOut>(
         this Result<TValue> result,
         Func<TValue, CancellationToken, Task<TOut>>? onSuccess,
-        Func<IReadOnlyList<IError>, CancellationToken, Task<TOut>>? onFailure,
+        Func<List<Error>, CancellationToken, Task<TOut>>? onFailure,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(result);
@@ -213,28 +213,28 @@ public static partial class ResultExtension
     public static Result<TValue> Ensure<TValue>(
         this Result<TValue> result,
         Func<TValue, bool>? predicate,
-        IError? errorValue)
+        Error? errorValue)
         => EnsureCore(result, predicate, errorValue is null ? null : _ => errorValue);
 
     /// <summary>Ensures the successful value satisfies a predicate, using an error factory on violation.</summary>
     public static Result<TValue> Ensure<TValue>(
         this Result<TValue> result,
         Func<TValue, bool>? predicate,
-        Func<IError>? error)
+        Func<Error>? error)
         => EnsureCore(result, predicate, error is null ? null : _ => error());
 
     /// <summary>Ensures the successful value satisfies a predicate, using a value-aware error factory on violation.</summary>
     public static Result<TValue> Ensure<TValue>(
         this Result<TValue> result,
         Func<TValue, bool>? predicate,
-        Func<TValue, IError>? onViolation)
+        Func<TValue, Error>? onViolation)
         => EnsureCore(result, predicate, onViolation);
 
     /// <summary>Asynchronously ensures the successful value satisfies a predicate.</summary>
     public static Task<Result<TValue>> EnsureAsync<TValue>(
         this Result<TValue> result,
         Func<TValue, CancellationToken, Task<bool>>? predicate,
-        IError? errorValue,
+        Error? errorValue,
         CancellationToken cancellationToken = default)
         => EnsureAsyncCore(
             result,
@@ -246,7 +246,7 @@ public static partial class ResultExtension
     public static Task<Result<TValue>> EnsureAsync<TValue>(
         this Result<TValue> result,
         Func<TValue, CancellationToken, Task<bool>>? predicate,
-        Func<IError>? error,
+        Func<Error>? error,
         CancellationToken cancellationToken = default)
         => EnsureAsyncCore(
             result,
@@ -258,7 +258,7 @@ public static partial class ResultExtension
     public static Task<Result<TValue>> EnsureAsync<TValue>(
         this Result<TValue> result,
         Func<TValue, CancellationToken, Task<bool>>? predicate,
-        Func<TValue, IError>? onViolation,
+        Func<TValue, Error>? onViolation,
         CancellationToken cancellationToken = default)
         => EnsureAsyncCore(
             result,
@@ -270,14 +270,14 @@ public static partial class ResultExtension
     public static Task<Result<TValue>> EnsureAsync<TValue>(
         this Result<TValue> result,
         Func<TValue, CancellationToken, Task<bool>>? predicate,
-        Func<TValue, CancellationToken, Task<IError>>? onViolation,
+        Func<TValue, CancellationToken, Task<Error>>? onViolation,
         CancellationToken cancellationToken = default)
         => EnsureAsyncCore(result, predicate, onViolation, cancellationToken);
 
     private static Result<TValue> EnsureCore<TValue>(
         Result<TValue> result,
         Func<TValue, bool>? predicate,
-        Func<TValue, IError?>? errorFactory)
+        Func<TValue, Error?>? errorFactory)
     {
         ArgumentNullException.ThrowIfNull(result);
         if (result.IsFailure)
@@ -298,7 +298,7 @@ public static partial class ResultExtension
     private static async Task<Result<TValue>> EnsureAsyncCore<TValue>(
         Result<TValue> result,
         Func<TValue, CancellationToken, Task<bool>>? predicate,
-        Func<TValue, CancellationToken, Task<IError>>? errorFactory,
+        Func<TValue, CancellationToken, Task<Error>>? errorFactory,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(result);
@@ -331,7 +331,7 @@ public static partial class ResultExtension
     /// <summary>Replaces a failed non-generic result using its errors.</summary>
     public static Result Recover(
         this Result result,
-        Func<IReadOnlyList<IError>, Result>? recovery)
+        Func<List<Error>, Result>? recovery)
     {
         ArgumentNullException.ThrowIfNull(result);
         if (result.IsSuccess)
@@ -346,7 +346,7 @@ public static partial class ResultExtension
     /// <summary>Recovers a failed generic result with a value.</summary>
     public static Result<TValue> Recover<TValue>(
         this Result<TValue> result,
-        Func<IReadOnlyList<IError>, TValue>? recovery)
+        Func<List<Error>, TValue>? recovery)
     {
         ArgumentNullException.ThrowIfNull(result);
         if (result.IsSuccess)
@@ -360,7 +360,7 @@ public static partial class ResultExtension
     /// <summary>Recovers a failed generic result with another result.</summary>
     public static Result<TValue> Recover<TValue>(
         this Result<TValue> result,
-        Func<IReadOnlyList<IError>, Result<TValue>>? recovery)
+        Func<List<Error>, Result<TValue>>? recovery)
     {
         ArgumentNullException.ThrowIfNull(result);
         if (result.IsSuccess)
@@ -375,7 +375,7 @@ public static partial class ResultExtension
     /// <summary>Asynchronously replaces a failed non-generic result using its errors.</summary>
     public static async Task<Result> RecoverAsync(
         this Result result,
-        Func<IReadOnlyList<IError>, CancellationToken, Task<Result>>? recovery,
+        Func<List<Error>, CancellationToken, Task<Result>>? recovery,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(result);
@@ -394,7 +394,7 @@ public static partial class ResultExtension
     /// <summary>Asynchronously recovers a failed generic result with a value.</summary>
     public static async Task<Result<TValue>> RecoverAsync<TValue>(
         this Result<TValue> result,
-        Func<IReadOnlyList<IError>, CancellationToken, Task<TValue>>? recovery,
+        Func<List<Error>, CancellationToken, Task<TValue>>? recovery,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(result);
@@ -412,7 +412,7 @@ public static partial class ResultExtension
     /// <summary>Asynchronously recovers a failed generic result with another result.</summary>
     public static async Task<Result<TValue>> RecoverAsync<TValue>(
         this Result<TValue> result,
-        Func<IReadOnlyList<IError>, CancellationToken, Task<Result<TValue>>>? recovery,
+        Func<List<Error>, CancellationToken, Task<Result<TValue>>>? recovery,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(result);
@@ -436,7 +436,7 @@ public static partial class ResultExtension
     public static Result Switch(
         this Result result,
         Action? onSuccess = null,
-        Action<IReadOnlyList<IError>>? onFailure = null)
+        Action<List<Error>>? onFailure = null)
     {
         ArgumentNullException.ThrowIfNull(result);
         if (result.IsSuccess)
@@ -450,7 +450,7 @@ public static partial class ResultExtension
     public static Result<TValue> Switch<TValue>(
         this Result<TValue> result,
         Action<TValue>? onSuccess = null,
-        Action<IReadOnlyList<IError>>? onFailure = null)
+        Action<List<Error>>? onFailure = null)
     {
         ArgumentNullException.ThrowIfNull(result);
         if (result.IsSuccess)
@@ -464,7 +464,7 @@ public static partial class ResultExtension
     public static async Task<Result> SwitchAsync(
         this Result result,
         Func<CancellationToken, Task>? onSuccess = null,
-        Func<IReadOnlyList<IError>, CancellationToken, Task>? onFailure = null,
+        Func<List<Error>, CancellationToken, Task>? onFailure = null,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(result);
@@ -489,7 +489,7 @@ public static partial class ResultExtension
     public static async Task<Result<TValue>> SwitchAsync<TValue>(
         this Result<TValue> result,
         Func<TValue, CancellationToken, Task>? onSuccess = null,
-        Func<IReadOnlyList<IError>, CancellationToken, Task>? onFailure = null,
+        Func<List<Error>, CancellationToken, Task>? onFailure = null,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(result);
@@ -533,7 +533,7 @@ public static partial class ResultExtension
     }
 
     /// <summary>Runs an action for a failed result and returns the same result.</summary>
-    public static Result TapError(this Result result, Action<IReadOnlyList<IError>>? onFailure)
+    public static Result TapError(this Result result, Action<List<Error>>? onFailure)
     {
         ArgumentNullException.ThrowIfNull(result);
         if (result.IsFailure)
@@ -544,7 +544,7 @@ public static partial class ResultExtension
     /// <summary>Runs an action for a failed generic result and returns the same result.</summary>
     public static Result<TValue> TapError<TValue>(
         this Result<TValue> result,
-        Action<IReadOnlyList<IError>>? onFailure)
+        Action<List<Error>>? onFailure)
     {
         ArgumentNullException.ThrowIfNull(result);
         if (result.IsFailure)
@@ -589,7 +589,7 @@ public static partial class ResultExtension
     /// <summary>Asynchronously runs an action for a failed non-generic result.</summary>
     public static async Task<Result> TapErrorAsync(
         this Result result,
-        Func<IReadOnlyList<IError>, CancellationToken, Task>? onFailure,
+        Func<List<Error>, CancellationToken, Task>? onFailure,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(result);
@@ -606,7 +606,7 @@ public static partial class ResultExtension
     /// <summary>Asynchronously runs an action for a failed generic result.</summary>
     public static async Task<Result<TValue>> TapErrorAsync<TValue>(
         this Result<TValue> result,
-        Func<IReadOnlyList<IError>, CancellationToken, Task>? onFailure,
+        Func<List<Error>, CancellationToken, Task>? onFailure,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(result);

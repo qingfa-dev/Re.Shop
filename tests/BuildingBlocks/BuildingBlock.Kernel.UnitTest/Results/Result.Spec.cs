@@ -2,7 +2,7 @@ using BuildingBlock.Kernel.Errors;
 using BuildingBlock.Kernel.Metadata;
 using BuildingBlock.Kernel.Results;
 
-namespace BuildingBlock.Kernel.UnitTest;
+namespace BuildingBlock.Kernel.UnitTest.Results;
 
 [Trait("Category", "Unit")]
 public class ResultSpec
@@ -20,7 +20,7 @@ public class ResultSpec
     [Fact]
     public void Constructor_Failure_With_Null_Status_Should_Default_To_Internal_Server_Error()
     {
-        var errors = new IError[] { ResultStub.NotFoundError() };
+        var errors = new List<Error> { ResultStub.NotFoundError() };
 
         var result = new Result(isSuccess: false, errors: errors, statusCode: null);
 
@@ -57,7 +57,7 @@ public class ResultSpec
     public void Result_Equality_Should_Exclude_Status_And_Metadata()
     {
         var left = Result.Fail(
-                new IError[] { ResultStub.NotFoundError() },
+                new List<Error> { ResultStub.NotFoundError() },
                 ResultConstant.StatusCode.InternalServerError)
             .WithMetadata("k", "v");
         var right = Result.Fail(ResultStub.NotFoundError());
@@ -115,7 +115,7 @@ public class ResultSpec
     {
         var failure = Result.Fail(ResultStub.NotFoundError());
 
-        var copy = failure.CopyWith(errors: new IError[] { ResultStub.ConflictError() });
+        var copy = failure.CopyWith(errors: new List<Error> { ResultStub.ConflictError() });
 
         copy.StatusCode.ShouldBe(ResultConstant.StatusCode.Conflict);
         copy.Errors[0].Code.ShouldBe("test.conflict");
@@ -124,7 +124,7 @@ public class ResultSpec
     [Fact]
     public void CopyWith_Errors_On_Success_Should_Preserve_Status()
     {
-        var copy = Result.Ok().CopyWith(errors: new IError[] { ResultStub.NotFoundError() });
+        var copy = Result.Ok().CopyWith(errors: new List<Error> { ResultStub.NotFoundError() });
 
         copy.IsSuccess.ShouldBeTrue();
         copy.StatusCode.ShouldBe(ResultConstant.StatusCode.Ok);
@@ -148,7 +148,7 @@ public class ResultSpec
     public void CopyWith_Should_Copy_Failure_State_And_Clone_Errors_And_Metadata()
     {
         var original = Result.Ok().WithMetadata("source", "original");
-        var errors = new[] { ResultStub.NotFoundError() };
+        var errors = new List<Error> { ResultStub.NotFoundError() };
 
         var copy = original.CopyWith(isSuccess: false, errors: errors);
 

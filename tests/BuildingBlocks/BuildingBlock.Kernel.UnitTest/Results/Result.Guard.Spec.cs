@@ -1,7 +1,7 @@
 using BuildingBlock.Kernel.Errors;
 using BuildingBlock.Kernel.Results;
 
-namespace BuildingBlock.Kernel.UnitTest;
+namespace BuildingBlock.Kernel.UnitTest.Results;
 
 [Trait("Category", "Unit")]
 public class ResultGuardSpec
@@ -31,12 +31,12 @@ public class ResultGuardSpec
     [Fact]
     public void ValidateErrors_Should_Require_Errors_Only_For_Failures_And_Enforce_Limit()
     {
-        ResultGuard.ValidateErrors(Array.Empty<IError>(), isSuccess: false)!
+        ResultGuard.ValidateErrors(new List<Error>(), isSuccess: false)!
             .Code.ShouldBe(ResultConstant.Failure.Errors.Empty.Code);
-        ResultGuard.ValidateErrors(Array.Empty<IError>(), isSuccess: true).ShouldBeNull();
+        ResultGuard.ValidateErrors(new List<Error>(), isSuccess: true).ShouldBeNull();
 
-        var tooManyErrors = Enumerable.Repeat<IError>(ResultStub.NotFoundError(),
-            ResultConstant.Constraint.Errors.MaxCount + 1).ToArray();
+        var tooManyErrors = Enumerable.Repeat<Error>(ResultStub.NotFoundError(),
+            ResultConstant.Constraint.Errors.MaxCount + 1).ToList();
         ResultGuard.ValidateErrors(tooManyErrors, isSuccess: false)!
             .Code.ShouldBe(ResultConstant.Failure.Errors.ExceedsMaxCount.Code);
     }
@@ -54,12 +54,12 @@ public class ResultGuardSpec
     [Fact]
     public void ValidateResultConsistency_Should_Reject_Empty_Or_Mixed_Status_Failures()
     {
-        ResultGuard.ValidateResultConsistency(isSuccess: false, Array.Empty<IError>())!
+        ResultGuard.ValidateResultConsistency(isSuccess: false, new List<Error>())!
             .Code.ShouldBe(ResultConstant.Failure.Result.FailureWithoutErrors.Code);
 
         ResultGuard.ValidateResultConsistency(
             isSuccess: false,
-            new IError[] { ResultStub.NotFoundError(), ResultStub.ConflictError() })!
+            new List<Error> { ResultStub.NotFoundError(), ResultStub.ConflictError() })!
             .Code.ShouldBe(ResultConstant.Failure.Result.MixedStatusCodes.Code);
     }
 
@@ -68,7 +68,7 @@ public class ResultGuardSpec
     {
         ResultGuard.ValidateResultConsistency(
             isSuccess: false,
-            new IError[] { ResultStub.NotFoundError(), ResultStub.NotFoundError() }).ShouldBeNull();
-        ResultGuard.ValidateResultConsistency(isSuccess: true, Array.Empty<IError>()).ShouldBeNull();
+            new List<Error> { ResultStub.NotFoundError(), ResultStub.NotFoundError() }).ShouldBeNull();
+        ResultGuard.ValidateResultConsistency(isSuccess: true, new List<Error>()).ShouldBeNull();
     }
 }

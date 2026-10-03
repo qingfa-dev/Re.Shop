@@ -1,6 +1,6 @@
 using BuildingBlock.Kernel.Metadata;
 
-namespace BuildingBlock.Kernel.UnitTest;
+namespace BuildingBlock.Kernel.UnitTest.Metadata;
 
 [Trait("Category", "Unit")]
 public class MetadataInterfaceSpec

@@ -1,7 +1,7 @@
 using BuildingBlock.Kernel.Errors;
 using BuildingBlock.Kernel.Metadata;
 
-namespace BuildingBlock.Kernel.UnitTest;
+namespace BuildingBlock.Kernel.UnitTest.Errors;
 
 [Trait("Category", "Unit")]
 public class ErrorExtensionSpec

@@ -1,6 +1,6 @@
 using BuildingBlock.Kernel.Errors;
 
-namespace BuildingBlock.Kernel.UnitTest;
+namespace BuildingBlock.Kernel.UnitTest.Errors;
 
 [Trait("Category", "Unit")]
 public class ErrorSpec
@@ -56,7 +56,7 @@ public class ErrorSpec
         // Act
         // Assert
         typeof(IError).IsAssignableFrom(typeof(Error)).ShouldBeTrue();
-        typeof(BuildingBlock.Kernel.Metadata.IMetadata).IsAssignableFrom(typeof(Error)).ShouldBeTrue();
+        typeof(Kernel.Metadata.IMetadata).IsAssignableFrom(typeof(Error)).ShouldBeTrue();
     }
 
     // ------------------------------------------------------------------

@@ -5,7 +5,7 @@ using BuildingBlock.Kernel.Metadata;
 
 namespace BuildingBlock.Kernel.Results;
 
-public partial record Result<TValue> : Result, IResult<TValue>
+public partial record Result<TValue> : Result, IResult<TValue, Error>
 {
     #region Value
 
@@ -19,7 +19,7 @@ public partial record Result<TValue> : Result, IResult<TValue>
     public Result(
         bool isSuccess,
         TValue value,
-        IReadOnlyList<IError>? errors = null,
+        List<Error>? errors = null,
         int? statusCode = null)
         : base(
             isSuccess: isSuccess,
@@ -50,7 +50,7 @@ public partial record Result<TValue> : Result, IResult<TValue>
     /// <returns>A new generic result containing the requested state.</returns>
     public new Result<TValue> CopyWith(
         bool? isSuccess = null,
-        IReadOnlyList<IError>? errors = null,
+        List<Error>? errors = null,
         int? statusCode = null,
         MetadataDictionary? metadata = null)
     {
@@ -62,7 +62,7 @@ public partial record Result<TValue> : Result, IResult<TValue>
                 nameof(isSuccess));
         }
 
-        var resolvedErrors = (errors ?? Errors).ToArray();
+        var resolvedErrors = (errors ?? Errors).ToList();
         var statusWasChanged = isSuccess.HasValue && isSuccess.Value != IsSuccess;
         var errorsWereChanged = errors is not null;
         var resolvedStatusCode = statusCode
@@ -94,16 +94,16 @@ public partial record Result<TValue> : Result, IResult<TValue>
     public Result<TValue> CopyWith(
         TValue value,
         bool? isSuccess = null,
-        IReadOnlyList<IError>? errors = null,
+        List<Error>? errors = null,
         int? statusCode = null,
         MetadataDictionary? metadata = null)
     {
         var resolvedIsSuccess = isSuccess ?? IsSuccess;
         var resolvedErrors = errors is not null
-            ? errors.ToArray()
+            ? errors.ToList()
             : resolvedIsSuccess && !IsSuccess
                 ? ResultConstant.Default.EmptyErrors
-                : Errors.ToArray();
+                : [.. Errors];
         var statusWasChanged = isSuccess.HasValue && isSuccess.Value != IsSuccess;
         var errorsWereChanged = errors is not null;
         var resolvedStatusCode = statusCode

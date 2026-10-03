@@ -44,7 +44,7 @@ public static class ResultConstant
     public static class Default
     {
         public const int Status = 500;
-        public static readonly IReadOnlyList<IError> EmptyErrors = Array.Empty<IError>();
+        public static readonly List<Error> EmptyErrors = new List<Error>();
     }
 
     #endregion

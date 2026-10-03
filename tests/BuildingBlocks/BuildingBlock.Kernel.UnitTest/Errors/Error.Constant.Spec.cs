@@ -1,7 +1,8 @@
 using System.Reflection;
+
 using BuildingBlock.Kernel.Errors;
 
-namespace BuildingBlock.Kernel.UnitTest;
+namespace BuildingBlock.Kernel.UnitTest.Errors;
 
 [Trait("Category", "Unit")]
 public class ErrorConstantSpec

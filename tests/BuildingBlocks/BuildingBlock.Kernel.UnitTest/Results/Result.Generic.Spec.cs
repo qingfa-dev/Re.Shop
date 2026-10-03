@@ -2,7 +2,7 @@ using BuildingBlock.Kernel.Errors;
 using BuildingBlock.Kernel.Metadata;
 using BuildingBlock.Kernel.Results;
 
-namespace BuildingBlock.Kernel.UnitTest;
+namespace BuildingBlock.Kernel.UnitTest.Results;
 
 [Trait("Category", "Unit")]
 public class ResultGenericSpec
@@ -32,7 +32,7 @@ public class ResultGenericSpec
     {
         var failure = Result<int>.Fail(ResultStub.NotFoundError());
 
-        var copy = failure.CopyWith(errors: new IError[] { ResultStub.ConflictError() });
+        var copy = failure.CopyWith(errors: new List<Error> { ResultStub.ConflictError() });
 
         copy.StatusCode.ShouldBe(ResultConstant.StatusCode.Conflict);
         copy.Errors[0].Code.ShouldBe("test.conflict");
@@ -60,7 +60,7 @@ public class ResultGenericSpec
     {
         var success = Result<int>.Ok(5);
 
-        var copy = success.CopyWith(value: 0, isSuccess: false, errors: new IError[] { ResultStub.NotFoundError() });
+        var copy = success.CopyWith(value: 0, isSuccess: false, errors: new List<Error> { ResultStub.NotFoundError() });
 
         copy.IsFailure.ShouldBeTrue();
         copy.Value.ShouldBe(default);
@@ -72,7 +72,7 @@ public class ResultGenericSpec
     {
         var failure = Result<int>.Fail(ResultStub.NotFoundError());
 
-        var copy = failure.CopyWith(value: 0, errors: new IError[] { ResultStub.ConflictError() });
+        var copy = failure.CopyWith(value: 0, errors: new List<Error> { ResultStub.ConflictError() });
 
         copy.IsFailure.ShouldBeTrue();
         copy.StatusCode.ShouldBe(ResultConstant.StatusCode.Conflict);
@@ -103,7 +103,7 @@ public class ResultGenericSpec
     [Fact]
     public void CopyWith_Errors_On_Success_Should_Preserve_Status_And_Value()
     {
-        var copy = Result<int>.Ok(5).CopyWith(errors: new IError[] { ResultStub.NotFoundError() });
+        var copy = Result<int>.Ok(5).CopyWith(errors: new List<Error> { ResultStub.NotFoundError() });
 
         copy.IsSuccess.ShouldBeTrue();
         copy.Value.ShouldBe(5);
@@ -115,7 +115,7 @@ public class ResultGenericSpec
     [Fact]
     public void CopyWith_Value_Errors_On_Success_Should_Preserve_Status()
     {
-        var copy = Result<int>.Ok(5).CopyWith(value: 7, errors: new IError[] { ResultStub.NotFoundError() });
+        var copy = Result<int>.Ok(5).CopyWith(value: 7, errors: new List<Error> { ResultStub.NotFoundError() });
 
         copy.IsSuccess.ShouldBeTrue();
         copy.Value.ShouldBe(7);
@@ -165,7 +165,7 @@ public class ResultGenericSpec
     public void CopyWith_Should_Clear_Value_When_Changing_To_Failure()
     {
         var original = Result<int>.Ok(5);
-        var errors = new[] { ResultStub.NotFoundError() };
+        var errors = new List<Error> { ResultStub.NotFoundError() };
 
         var copy = original.CopyWith(isSuccess: false, errors: errors);
 

@@ -3,12 +3,12 @@ using BuildingBlock.Kernel.Metadata;
 
 namespace BuildingBlock.Kernel.Results;
 
-public partial record Result : IResult, IEquatable<Result>
+public partial record Result : IResult<Error>, IEquatable<Result>
 {
     #region Properties
     public bool IsSuccess { get; }
     
-    public IReadOnlyList<IError> Errors { get; }
+    public List<Error> Errors { get; }
     public MetadataDictionary Metadata { get; set; } = new();
 
     public bool HasValue => IsSuccess;
@@ -21,7 +21,7 @@ public partial record Result : IResult, IEquatable<Result>
 
     public Result(
         bool isSuccess,
-        IReadOnlyList<IError> errors,
+        List<Error> errors,
         int? statusCode = null)
     {
         var normalizedErrors = errors ?? ResultConstant.Default.EmptyErrors;
@@ -54,16 +54,16 @@ public partial record Result : IResult, IEquatable<Result>
     /// <returns>A new result containing the requested state.</returns>
     public Result CopyWith(
         bool? isSuccess = null,
-        IReadOnlyList<IError>? errors = null,
+        List<Error>? errors = null,
         int? statusCode = null,
         MetadataDictionary? metadata = null)
     {
         var resolvedIsSuccess = isSuccess ?? IsSuccess;
         var resolvedErrors = errors is not null
-            ? errors.ToArray()
+            ? errors.ToList()
             : resolvedIsSuccess && !IsSuccess
                 ? ResultConstant.Default.EmptyErrors
-                : Errors.ToArray();
+                : [.. Errors];
         var statusWasChanged = isSuccess.HasValue && isSuccess.Value != IsSuccess;
         var errorsWereChanged = errors is not null;
         var resolvedStatusCode = statusCode

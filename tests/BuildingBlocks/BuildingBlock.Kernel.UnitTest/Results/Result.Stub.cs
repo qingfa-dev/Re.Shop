@@ -1,6 +1,6 @@
 using BuildingBlock.Kernel.Errors;
 
-namespace BuildingBlock.Kernel.UnitTest;
+namespace BuildingBlock.Kernel.UnitTest.Results;
 
 internal static class ResultStub
 {

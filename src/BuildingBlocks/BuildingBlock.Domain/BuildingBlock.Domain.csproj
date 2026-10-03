@@ -10,4 +10,9 @@
     <ProjectReference Include="../BuildingBlock.Kernel/BuildingBlock.Kernel.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Mediator.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+  </ItemGroup>
+
 </Project>

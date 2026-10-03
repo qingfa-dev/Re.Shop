@@ -1,7 +1,7 @@
 using BuildingBlock.Kernel.Errors;
 using BuildingBlock.Kernel.Results;
 
-namespace BuildingBlock.Kernel.UnitTest;
+namespace BuildingBlock.Kernel.UnitTest.Results;
 
 [Trait("Category", "Unit")]
 public class ResultFlowSpec
@@ -118,7 +118,7 @@ public class ResultFlowSpec
     public void Ensure_Should_Return_Flow_Error_When_The_Error_Factory_Returns_Null()
     {
         var result = Result<int>.Ok(0)
-            .Ensure(_ => false, error: (Func<IError>)(() => null!));
+            .Ensure(_ => false, error: (Func<Error>)(() => null!));
         var missingError = Result<int>.Ok(0)
             .Ensure(_ => false, errorValue: null);
 
@@ -134,7 +134,7 @@ public class ResultFlowSpec
         var failure = Result<int>.Fail(ResultStub.NotFoundError());
 
         var recovered = failure.Recover(errors => errors.Count);
-        var withoutHandler = failure.Recover<int>((Func<IReadOnlyList<BuildingBlock.Kernel.Errors.IError>, int>?)null);
+        var withoutHandler = failure.Recover<int>((Func<List<Error>, int>?)null);
 
         recovered.IsSuccess.ShouldBeTrue();
         recovered.Value.ShouldBe(1);
@@ -182,7 +182,7 @@ public class ResultFlowSpec
             _ => ResultStub.ConflictError());
         var ensuredWithAsyncFactory = await Result<int>.Ok(0).EnsureAsync(
             (_, _) => Task.FromResult(false),
-            (_, _) => Task.FromResult<IError>(ResultStub.NotFoundError()));
+            (_, _) => Task.FromResult<Error>(ResultStub.NotFoundError()));
         var switchedValue = 0;
         await ensured.SwitchAsync(
             (value, _) =>
@@ -258,7 +258,7 @@ public class ResultFlowSpec
     {
         var missingMap = await Result.Ok().MapAsync<int>(mapper: null);
         var missingRecover = await Result<int>.Fail(ResultStub.NotFoundError())
-            .RecoverAsync<int>((Func<IReadOnlyList<IError>, CancellationToken, Task<int>>?)null);
+            .RecoverAsync<int>((Func<List<Error>, CancellationToken, Task<int>>?)null);
         var missingPredicate = await Result<int>.Ok(1)
             .EnsureAsync((Func<int, CancellationToken, Task<bool>>?)null, ResultStub.NotFoundError());
         var nullMapTask = await Result<int>.Ok(1)
@@ -466,7 +466,7 @@ public class ResultFlowSpec
     [Fact]
     public void Ensure_With_Null_Factory_Func_Should_Return_Flow_Error()
     {
-        var result = Result<int>.Ok(0).Ensure(_ => false, error: (Func<IError>?)null);
+        var result = Result<int>.Ok(0).Ensure(_ => false, error: (Func<Error>?)null);
 
         result.IsFailure.ShouldBeTrue();
         result.Errors[0].Code.ShouldBe(ResultConstant.Failure.Flow.CallbackMissing.Code);
@@ -478,7 +478,7 @@ public class ResultFlowSpec
         var success = Result.Ok();
         var recovered = success.Recover(_ => Result.Fail(ResultStub.ConflictError()));
         var missingHandler = Result.Fail(ResultStub.NotFoundError())
-            .Recover((Func<IReadOnlyList<IError>, Result>?)null);
+            .Recover((Func<List<Error>, Result>?)null);
         var missingResult = Result.Fail(ResultStub.NotFoundError())
             .Recover(_ => null!);
 
@@ -504,7 +504,7 @@ public class ResultFlowSpec
         var success = Result<int>.Ok(5);
         var recovered = success.Recover(_ => Result<int>.Ok(9));
         var missingHandler = Result<int>.Fail(ResultStub.NotFoundError())
-            .Recover((Func<IReadOnlyList<IError>, Result<int>>?)null);
+            .Recover((Func<List<Error>, Result<int>>?)null);
         var missingResult = Result<int>.Fail(ResultStub.NotFoundError())
             .Recover(_ => null!);
 
@@ -519,7 +519,7 @@ public class ResultFlowSpec
         var success = Result.Ok();
         var recovered = await success.RecoverAsync((_, _) => Task.FromResult(Result.Fail(ResultStub.ConflictError())));
         var missingHandler = await Result.Fail(ResultStub.NotFoundError())
-            .RecoverAsync((Func<IReadOnlyList<IError>, CancellationToken, Task<Result>>?)null);
+            .RecoverAsync((Func<List<Error>, CancellationToken, Task<Result>>?)null);
         var missingTask = await Result.Fail(ResultStub.NotFoundError())
             .RecoverAsync((_, _) => null!);
         var missingResult = await Result.Fail(ResultStub.NotFoundError())
@@ -537,7 +537,7 @@ public class ResultFlowSpec
         var success = Result<int>.Ok(5);
         var recovered = await success.RecoverAsync((_, _) => Task.FromResult(9));
         var missingTask = await Result<int>.Fail(ResultStub.NotFoundError())
-            .RecoverAsync((Func<IReadOnlyList<IError>, CancellationToken, Task<int>>)((_, _) => null!));
+            .RecoverAsync((Func<List<Error>, CancellationToken, Task<int>>)((_, _) => null!));
 
         recovered.ShouldBeSameAs(success);
         missingTask.Errors[0].Code.ShouldBe(ResultConstant.Failure.Flow.ResultMissing.Code);
@@ -549,9 +549,9 @@ public class ResultFlowSpec
         var success = Result<int>.Ok(5);
         var recovered = await success.RecoverAsync((_, _) => Task.FromResult(Result<int>.Ok(9)));
         var missingHandler = await Result<int>.Fail(ResultStub.NotFoundError())
-            .RecoverAsync((Func<IReadOnlyList<IError>, CancellationToken, Task<Result<int>>>?)null);
+            .RecoverAsync((Func<List<Error>, CancellationToken, Task<Result<int>>>?)null);
         var missingTask = await Result<int>.Fail(ResultStub.NotFoundError())
-            .RecoverAsync((Func<IReadOnlyList<IError>, CancellationToken, Task<Result<int>>>)((_, _) => null!));
+            .RecoverAsync((Func<List<Error>, CancellationToken, Task<Result<int>>>)((_, _) => null!));
         var missingResult = await Result<int>.Fail(ResultStub.NotFoundError())
             .RecoverAsync((_, _) => Task.FromResult((Result<int>)null!));
         var recoveredFromFailure = await Result<int>.Fail(ResultStub.NotFoundError())
@@ -792,15 +792,15 @@ public class ResultFlowSpec
     public async Task EnsureAsync_With_Factory_Func_Overloads_Should_Handle_Missing_Values()
     {
         var missingFunc = await Result<int>.Ok(1)
-            .EnsureAsync((_, _) => Task.FromResult(false), error: (Func<IError>?)null);
+            .EnsureAsync((_, _) => Task.FromResult(false), error: (Func<Error>?)null);
         var nullErrorResult = await Result<int>.Ok(1)
-            .EnsureAsync((_, _) => Task.FromResult(false), error: (Func<IError>)(() => null!));
+            .EnsureAsync((_, _) => Task.FromResult(false), error: (Func<Error>)(() => null!));
         var missingSyncViolation = await Result<int>.Ok(1)
-            .EnsureAsync((_, _) => Task.FromResult(false), onViolation: (Func<int, IError>?)null);
+            .EnsureAsync((_, _) => Task.FromResult(false), onViolation: (Func<int, Error>?)null);
         var nullAsyncTask = await Result<int>.Ok(1)
             .EnsureAsync((_, _) => Task.FromResult(false), onViolation: (_, _) => null!);
         var nullAsyncResult = await Result<int>.Ok(1)
-            .EnsureAsync((_, _) => Task.FromResult(false), onViolation: (_, _) => Task.FromResult<IError>(null!));
+            .EnsureAsync((_, _) => Task.FromResult(false), onViolation: (_, _) => Task.FromResult<Error>(null!));
 
         missingFunc.Errors[0].Code.ShouldBe(ResultConstant.Failure.Flow.CallbackMissing.Code);
         nullErrorResult.Errors[0].Code.ShouldBe(ResultConstant.Failure.Flow.ErrorMissing.Code);

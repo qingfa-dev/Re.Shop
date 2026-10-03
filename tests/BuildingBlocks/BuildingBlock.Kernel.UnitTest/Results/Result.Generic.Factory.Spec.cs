@@ -1,7 +1,7 @@
 using BuildingBlock.Kernel.Errors;
 using BuildingBlock.Kernel.Results;
 
-namespace BuildingBlock.Kernel.UnitTest;
+namespace BuildingBlock.Kernel.UnitTest.Results;
 
 [Trait("Category", "Unit")]
 public class ResultGenericFactorySpec
@@ -64,7 +64,7 @@ public class ResultGenericFactorySpec
     [Fact]
     public void Failure_Factory_Should_Reject_Empty_Error_List()
     {
-        var act = () => Result.Fail(Array.Empty<IError>());
+        var act = () => Result.Fail(Array.Empty<Error>());
 
         Should.Throw<ArgumentException>(act);
     }
@@ -72,7 +72,7 @@ public class ResultGenericFactorySpec
     [Fact]
     public void Failure_Enumerable_Overloads_Should_Create_Failures()
     {
-        var errors = new IError[] { ResultStub.NotFoundError() };
+        var errors = new Error[] { ResultStub.NotFoundError() };
 
         var resolved = Result<string>.Failure(errors);
         var explicitStatus = Result<string>.Failure(errors, ResultConstant.StatusCode.ServiceUnavailable);
@@ -92,7 +92,7 @@ public class ResultGenericFactorySpec
         result.Errors[0].Code.ShouldBe("test.not_found");
     }
 
-    private static IEnumerable<IError> Enumerate(IError error)
+    private static IEnumerable<Error> Enumerate(Error error)
     {
         yield return error;
     }

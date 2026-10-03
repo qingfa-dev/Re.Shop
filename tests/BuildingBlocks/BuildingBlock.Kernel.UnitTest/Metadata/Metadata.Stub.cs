@@ -1,6 +1,6 @@
 using BuildingBlock.Kernel.Metadata;
 
-namespace BuildingBlock.Kernel.UnitTest;
+namespace BuildingBlock.Kernel.UnitTest.Metadata;
 
 // Create: Minimal IMetadata double for extension-method specs.
 public sealed class MetadataStub : IMetadata
