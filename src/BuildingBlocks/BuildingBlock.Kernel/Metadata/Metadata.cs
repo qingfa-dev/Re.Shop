@@ -14,7 +14,7 @@ public abstract record MetadataBase : IMetadata
     /// <remarks>
     /// Use <see cref="MetadataDictionary.Create()"/> when you need a mutable copy,
     /// or assign a custom dictionary at initialization time.
-    /// The <see cref="Empty"/> singleton is read-only by convention — do not cast and mutate it.
+    /// The <see cref="MetadataDictionary.Empty"/> singleton is read-only by convention — do not cast and mutate it.
     /// </remarks>
     public MetadataDictionary Metadata { get; init; } = new MetadataDictionary();
 

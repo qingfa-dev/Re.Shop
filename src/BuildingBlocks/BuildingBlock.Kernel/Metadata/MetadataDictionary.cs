@@ -2,7 +2,7 @@ namespace BuildingBlock.Kernel.Metadata;
 
 /// <summary>Case-insensitive metadata dictionary.</summary>
 /// <remarks>
-/// Callers must treat <see cref="Empty"/> as read-only; use <see cref="Create()"/> when mutation is intended.
+/// Callers must treat <see cref="MetadataDictionary.Empty"/> as read-only; use <see cref="Create()"/> when mutation is intended.
 /// Key comparison follows <see cref="StringComparer.OrdinalIgnoreCase"/>.
 /// </remarks>
 public sealed class MetadataDictionary : Dictionary<string, object>, IMetadataDictionary

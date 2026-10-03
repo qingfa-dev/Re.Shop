@@ -46,10 +46,11 @@ public static class MetadataConstant
     /// </summary>
     /// <remarks>
     /// Traverse to the relevant subject (&lt;subject&gt;), then field, then rule to obtain
-    /// the <see cref="Code"/>, <see cref="Message"/>, and <see cref="Pattern"/> constants.
+    /// the <c>Code</c>, <c>Message</c>, and <c>Pattern</c> constants.
     /// </remarks>
     public static class Result
     {
+        /// <summary>Failure rules grouped by subject and field.</summary>
         public static class Failure
         {
             #region Request
@@ -63,7 +64,7 @@ public static class MetadataConstant
                 public static class Argument
                 {
                     /// <summary><c>request.argument.null</c> — request argument must not be null.</summary>
-                    /// <remarks>Use <see cref="Pattern"/> in exceptions to keep code and messages in sync.</remarks>
+                    /// <remarks>Use the <c>Pattern</c> constant in exceptions to keep code and messages in sync.</remarks>
                     public static class Null
                     {
                         /// <summary>The failure code: <c>"request.argument.null"</c>.</summary>
