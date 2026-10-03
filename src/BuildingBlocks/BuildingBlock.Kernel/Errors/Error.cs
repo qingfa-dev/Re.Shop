@@ -7,10 +7,10 @@ public partial record Error : IError, IEquatable<Error>
     #region Properties
     public string Code { get; }
     public string Message { get; }
-    public string? Type { get; init; }
-    public string? Instance { get; init; }
-    public int? Status { get; init; }
-    public ErrorSeverity Severity { get; init; }
+    public string? Type { get;  }
+    public string? Instance { get; }
+    public int? Status { get; }
+    public ErrorSeverity Severity { get; }
     public MetadataDictionary Metadata { get; set; } = new MetadataDictionary();
     #endregion
 
